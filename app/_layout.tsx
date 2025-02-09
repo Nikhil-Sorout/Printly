@@ -10,7 +10,9 @@ import { StatusBar } from "expo-status-bar";
 export default function RootLayout() {
   return (
     <GluestackUIProvider mode="light"><Provider store={store}>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(Onboarding)"/>
+        </Stack>
         <StatusBar style="dark"/>
       </Provider></GluestackUIProvider>
   );

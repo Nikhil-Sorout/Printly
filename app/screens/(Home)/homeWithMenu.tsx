@@ -1,9 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, FlatList, Dimensions } from 'react-native';
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, FlatList, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { menuData } from '../../data/menuData';
 import { cartSlice } from '../../redux/cartSlice';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Divider } from '@/components/ui/divider';
 
 
@@ -148,7 +147,7 @@ const home = () => {
 
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <TextInput
                 style={styles.searchBar}
                 placeholder="Search for items or categories"
@@ -182,23 +181,27 @@ const home = () => {
                 animationType="slide"
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Divider />
-                        {menuData.map((category) => (
-                            <TouchableOpacity
-                                key={category.id}
-                                onPress={() => {
-                                    handleScrollToCategory(category.name);
-                                    setModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.modalText}>{category.name}</Text>
+                <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+                    <View style={styles.modalContainer}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
                                 <Divider />
-                            </TouchableOpacity>
-                        ))}
+                                {menuData.map((category) => (
+                                    <TouchableOpacity
+                                        key={category.id}
+                                        onPress={() => {
+                                            handleScrollToCategory(category.name);
+                                            setModalVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.modalText}>{category.name}</Text>
+                                        <Divider />
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
 
             {/* Cart Modal */}
@@ -209,42 +212,46 @@ const home = () => {
                 animationType="slide"
                 onRequestClose={() => setCartModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Cart</Text>
-                        <FlatList
-                            data={Object.values(cart.items)}
-                            keyExtractor={(item) => item.name}
-                            renderItem={({ item }) => renderCartItem(item)}
-                        />
-                        <View style={styles.cartSummary}>
-                            <Text style={styles.cartSummaryText}>
-                                Total Items: {cart.itemCount}
-                            </Text>
-                            <Text style={styles.cartSummaryText}>
-                                Total Price: ${cart.total.toFixed(2)}
-                            </Text>
-                        </View>
-                        <View style={styles.cartButtons}>
-                            <TouchableOpacity
-                                style={styles.discardButton}
-                                onPress={handleDiscardCart}
-                            >
-                                <Text style={{ color: '#FFF' }}>Discard</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.printButton}
-                                onPress={() => {
-                                    alert('Print functionality coming soon!');
-                                }}
-                            >
-                                <Text style={{ color: '#FFF' }}>Print</Text>
-                            </TouchableOpacity>
-                        </View>
+                <TouchableWithoutFeedback onPress={() => setCartModalVisible(false)}>
+                    <View style={styles.modalContainer}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Cart</Text>
+                                <FlatList
+                                    data={Object.values(cart.items)}
+                                    keyExtractor={(item) => item.name}
+                                    renderItem={({ item }) => renderCartItem(item)}
+                                />
+                                <View style={styles.cartSummary}>
+                                    <Text style={styles.cartSummaryText}>
+                                        Total Items: {cart.itemCount}
+                                    </Text>
+                                    <Text style={styles.cartSummaryText}>
+                                        Total Price: ${cart.total.toFixed(2)}
+                                    </Text>
+                                </View>
+                                <View style={styles.cartButtons}>
+                                    <TouchableOpacity
+                                        style={styles.discardButton}
+                                        onPress={handleDiscardCart}
+                                    >
+                                        <Text style={{ color: '#FFF' }}>Discard</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.printButton}
+                                        onPress={() => {
+                                            alert('Print functionality coming soon!');
+                                        }}
+                                    >
+                                        <Text style={{ color: '#FFF' }}>Print</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
-        </SafeAreaView>
+        </View>
     )
 }
 
@@ -252,8 +259,8 @@ const home = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: width * 0.03,
-        backgroundColor: '#FEFEFF'
+        backgroundColor: '#FEFEFF',
+        paddingVertical: height * 0.01
     },
     searchBar: {
         height: height * 0.05,
@@ -306,7 +313,7 @@ const styles = StyleSheet.create({
     },
     floatingButton: {
         position: 'absolute',
-        bottom: height * 0.03,
+        bottom: height * 0.01,
         left: width * 0.05,
         backgroundColor: '#FEFEFF',
         padding: width * 0.04,
@@ -321,7 +328,7 @@ const styles = StyleSheet.create({
     },
     cartButton: {
         position: 'absolute',
-        bottom: height * 0.03,
+        bottom: height * 0.01,
         right: width * 0.05,
         backgroundColor: '#FEFEFF',
         borderColor: '#9893DA',
@@ -338,7 +345,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
     },
     modalContent: {
         width: '80%',

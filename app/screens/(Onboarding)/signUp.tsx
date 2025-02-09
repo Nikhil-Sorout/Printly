@@ -31,7 +31,7 @@ const signUp = () => {
     setIsUserNameInvalid(isUserNameInvalid);
   
     if (!isPswdInvalid && !isEmailInvalid && !isUserNameInvalid) {
-      router.replace('/screens/(Home)');
+      router.replace('/screens/(Onboarding)/logIn');
     }
   };
   
