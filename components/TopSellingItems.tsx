@@ -129,7 +129,7 @@ const TopSellingItems = () => {
 
                     {/* month picker */}
                     <Select style={styles.yearPicker}
-                        defaultValue={selectedMonth?.toString()}
+                        defaultValue={"Jan"}
                         onValueChange={(value) => handleMonthChange(value)}>
                         <SelectTrigger style={styles.trigger} variant="outline" size="sm">
                             <SelectInput placeholder={selectedMonth?.toString()} />
@@ -142,7 +142,7 @@ const TopSellingItems = () => {
                                     <SelectDragIndicator />
                                 </SelectDragIndicatorWrapper>
                                 {months.map((item) => (
-                                    <SelectItem key={item.toString()} label={`${item.label}`} value={item.value?.toString()} />
+                                    <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
                                 ))}
                             </SelectContent>
                         </SelectPortal>
@@ -151,7 +151,7 @@ const TopSellingItems = () => {
             </View>
 
             {/* Pie chart */}
-            {topItemsData.length != 0 && <PolarChart
+            {<PolarChart
                 data={topItemsData} // Use top-selling items data
                 labelKey={"label"} // Item names as labels
                 valueKey={"value"} // Total sales amount
@@ -226,6 +226,10 @@ const styles = StyleSheet.create({
         width: width * .95,
         justifyContent: 'center',
         gap: height * .02,
+        backgroundColor: '#F6F6FF',
+        padding: height*.01,
+        borderRadius: width*.02,
+        elevation: 2
     },
     yearSalesLabel: {
         fontSize: 18,

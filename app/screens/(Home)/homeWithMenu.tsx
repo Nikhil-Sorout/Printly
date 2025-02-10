@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { menuData } from '../../data/menuData';
 import { cartSlice } from '../../redux/cartSlice';
 import { Divider } from '@/components/ui/divider';
+import { useCurrency } from '@/app/context/currencyContext';
+import homeThemedStyles from '@/app/styles/homeThemedStyles';
 
 
 
@@ -28,6 +30,11 @@ const { width, height } = Dimensions.get('window')
 
 const home = () => {
 
+    const styles = homeThemedStyles()
+
+    const {currency, currencySymbol, convertAmount} = useCurrency();
+
+
     const dispatch = useDispatch();
     const cart = useSelector((state: { cart: CartState }) => state.cart);
 
@@ -47,7 +54,7 @@ const home = () => {
         <View style={styles.cartItem}>
             <Text style={styles.cartItemText}>{item.name}</Text>
             <Text style={styles.cartItemText}>x{item.quantity}</Text>
-            <Text style={styles.cartItemText}>${item.price * item.quantity}</Text>
+            <Text style={styles.cartItemText}>{currencySymbol} {Number(convertAmount(item.price).toFixed(2)) * item.quantity}</Text>
         </View>
     );
 
@@ -97,7 +104,7 @@ const home = () => {
 
             <View style={styles.itemBlock}>
                 <Text style={{ fontFamily: 'serif' }}>{item.name}</Text>
-                <Text>${item.price}</Text>
+                <Text>{currencySymbol} {Number(convertAmount(item.price).toFixed(2))}</Text>
                 <View style={styles.actionButtons}>
                     {itemQuantity > 0 ? (
                         <View style={styles.quantityContainer}>
@@ -217,17 +224,19 @@ const home = () => {
                         <TouchableWithoutFeedback>
                             <View style={styles.modalContent}>
                                 <Text style={styles.modalTitle}>Cart</Text>
+                                <Divider />
                                 <FlatList
                                     data={Object.values(cart.items)}
                                     keyExtractor={(item) => item.name}
                                     renderItem={({ item }) => renderCartItem(item)}
                                 />
+                                <Divider />
                                 <View style={styles.cartSummary}>
                                     <Text style={styles.cartSummaryText}>
                                         Total Items: {cart.itemCount}
                                     </Text>
                                     <Text style={styles.cartSummaryText}>
-                                        Total Price: ${cart.total.toFixed(2)}
+                                        Total Price: {currencySymbol} {convertAmount(cart.total).toFixed(2)}
                                     </Text>
                                 </View>
                                 <View style={styles.cartButtons}>
@@ -255,189 +264,5 @@ const home = () => {
     )
 }
 
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FEFEFF',
-        paddingVertical: height * 0.01
-    },
-    searchBar: {
-        height: height * 0.05,
-        borderColor: '#9893DA',
-        borderWidth: 1,
-        marginBottom: height * 0.02,
-        paddingHorizontal: width * 0.03,
-        borderRadius: 8,
-        backgroundColor: '#FFFFFF',
-        color: '#000',
-    },
-    categoryContainer: {
-        marginBottom: height * 0.025,
-        backgroundColor: '#F6F6FF',
-        borderRadius: 8,
-        padding: width * 0.04,
-        elevation: 2
-    },
-    categoryTitle: {
-        fontSize: width * 0.06,
-        fontWeight: 'semibold',
-        color: '#9893DA',
-        marginBottom: height * 0.015,
-        fontFamily: 'serif',
-    },
-    itemsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    itemBlock: {
-        width: '48%',
-        padding: width * 0.04,
-        borderWidth: 1,
-        borderColor: '#9893DA',
-        borderRadius: 8,
-        backgroundColor: '#FFFFFF',
-        marginBottom: height * 0.015,
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: height * 0.015,
-    },
-    addButton: {
-        backgroundColor: '#9893DA',
-        paddingVertical: height * 0.01,
-        paddingHorizontal: width * 0.03,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    floatingButton: {
-        position: 'absolute',
-        bottom: height * 0.01,
-        left: width * 0.05,
-        backgroundColor: '#FEFEFF',
-        padding: width * 0.04,
-        borderRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        alignItems: 'center',
-        borderColor: '#9893DA',
-        borderWidth: 1,
-    },
-    cartButton: {
-        position: 'absolute',
-        bottom: height * 0.01,
-        right: width * 0.05,
-        backgroundColor: '#FEFEFF',
-        borderColor: '#9893DA',
-        borderWidth: 1,
-        padding: width * 0.04,
-        borderRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        alignItems: 'center',
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    },
-    modalContent: {
-        width: '80%',
-        backgroundColor: '#FEFEFF',
-        borderRadius: 10,
-        borderColor: '#9893DA',
-        borderWidth: 2,
-        padding: width * 0.05,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-    },
-    modalText: {
-        fontSize: width * 0.05,
-        color: '#9893DA',
-        paddingVertical: height * 0.015,
-        textAlign: 'center',
-        fontFamily: 'serif',
-    },
-    quantityContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
-        width: '100%',
-    },
-    quantityButton: {
-        backgroundColor: '#9893DA',
-        padding: height * 0.005,
-        width: width * 0.08,
-        borderRadius: 5,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    quantityText: {
-        fontSize: width * 0.04,
-        fontWeight: 'bold',
-        marginHorizontal: width * 0.02,
-        color: '#333',
-    },
-    modalTitle: {
-        fontSize: width * 0.05,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: height * 0.015,
-        textAlign: 'center',
-    },
-    cartItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: height * 0.015,
-        borderBottomWidth: 1,
-        borderBottomColor: '#CCC',
-    },
-    cartItemText: {
-        fontSize: width * 0.04,
-        color: '#333',
-    },
-    cartSummary: {
-        marginTop: height * 0.025,
-        borderTopWidth: 1,
-        borderTopColor: '#CCC',
-        paddingTop: height * 0.015,
-    },
-    cartSummaryText: {
-        fontSize: width * 0.045,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center',
-        marginBottom: height * 0.01,
-    },
-    cartButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: height * 0.025,
-    },
-    discardButton: {
-        backgroundColor: '#FF6B6B',
-        padding: height * 0.015,
-        borderRadius: 8,
-        flex: 1,
-        marginRight: width * 0.02,
-        alignItems: 'center',
-    },
-    printButton: {
-        backgroundColor: '#9893DA',
-        padding: height * 0.015,
-        borderRadius: 8,
-        flex: 1,
-        marginLeft: width * 0.02,
-        alignItems: 'center',
-    },
-});
 
 export default home

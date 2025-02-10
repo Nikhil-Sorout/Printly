@@ -11,12 +11,14 @@ import { Input, InputField } from '@/components/ui/input';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '@/components/Header';
 import AddItemModal from '@/components/AddItemModal';
+import homeWithoutMenuThemedStyles from '@/app/styles/homeWithoutMenuThemedStyles';
 
 
-const { width, height } = Dimensions.get('window')
 
 
 const Index: React.FC = () => {
+
+  const styles = homeWithoutMenuThemedStyles();
 
   const [showModal, setShowModal] = React.useState(false)
 
@@ -50,44 +52,6 @@ const Index: React.FC = () => {
   )
 };
 
-const styles = StyleSheet.create({
-  mainContainer:{
-    flex: 1,
-    padding : width * 0.03,
-    backgroundColor: '#FEFEFF',
-  },
-  container: {
-    flex: 1,
-    padding: height * .04,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: height * .02
-  },
-  addItemsTxt: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'grey'
-  },
-  addItemsBtn: {
-    backgroundColor: '#9893DA'
-  },
-  modalBody: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    padding: 5
-  },
-  formControl: {
-    width: width * .5
-  },
-  label: {
-    color: "#9893DA",
-    fontWeight: 'bold'
-  },
-  input: {
-    borderColor: '#9893DA'
-  },
-})
 
 
 

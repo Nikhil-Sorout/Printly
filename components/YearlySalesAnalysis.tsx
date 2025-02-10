@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet, Dimensions, FlatList } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Bar, CartesianChart, useChartPressState } from 'victory-native'
 import { transactionItem, transactionsData } from '@/app/data/transactionsData'
@@ -19,13 +19,12 @@ import {
     SelectItem,
 } from "@/components/ui/select"
 import { ChevronDownIcon } from '@/components/ui/icon'
+import { useCurrency } from '@/app/context/currencyContext'
 
 
 const { width, height } = Dimensions.get("window")
 
 const YearlySalesAnalysis = () => {
-
-
 
     const fontSize = 10;
     const font = useFont(require('../assets/fonts/SpaceMono-Regular.ttf'), fontSize);
@@ -39,7 +38,7 @@ const YearlySalesAnalysis = () => {
     const { state, isActive } = useChartPressState({ x: 0, y: { sales: 0 } });
 
     const value = useDerivedValue(() => {
-        return state.y.sales.value.value.toString();
+        return (state.y.sales.value.value.toString());
     })
 
     const textYPostion = useDerivedValue(() => {
@@ -52,6 +51,7 @@ const YearlySalesAnalysis = () => {
     }, [state, toolTipFont])
 
 
+    
 
     // Filter sales data based on the selected year
     const filteredData: Record<number, number> = transactionsData
@@ -73,7 +73,8 @@ const YearlySalesAnalysis = () => {
     if (!font) {
         return null; // Font is still loading
     }
-
+   
+    
 
     const handleYearChange = (value: string) => {
         const year = parseInt(value, 10); // Convert to number
@@ -89,7 +90,7 @@ const YearlySalesAnalysis = () => {
             <View style={styles.yearlySales}>
                 {/* Label */}
                 <Text style={styles.yearSalesLabel}>Yearly Sales</Text>
-                
+
                 {/* Year picker */}
                 <Select style={styles.yearPicker}
                     defaultValue={selectedYear.toString()}
@@ -112,7 +113,7 @@ const YearlySalesAnalysis = () => {
                 </Select>
 
             </View>
-            
+
             {/* Bar Chart */}
             <CartesianChart
                 data={monthlyData}
@@ -171,6 +172,10 @@ const styles = StyleSheet.create({
         width: width * .95,
         justifyContent: 'center',
         gap: height * .02,
+        backgroundColor: '#F6F6FF',
+        padding: height * .01,
+        borderRadius: width * .02,
+        elevation: 2
     },
     yearSalesLabel: {
         fontSize: 18,

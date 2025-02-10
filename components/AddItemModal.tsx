@@ -5,12 +5,15 @@ import { AddIcon, AlertCircleIcon, CloseIcon, Icon } from '@/components/ui/icon'
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from '@/components/ui/modal';
 import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, FormControlLabelText } from '@/components/ui/form-control';
 import { Input, InputField } from '@/components/ui/input';
+import { useCurrency } from '@/app/context/currencyContext';
 
 
 const { width, height } = Dimensions.get('window')
 
 const AddItemModal = ({ isVisible, onClose}: { isVisible: boolean, onClose: ()=>void}) => {
 
+
+    const {currency} = useCurrency()
   
     const saveItem = () => {
         const isCategoryInvalid = category.length <= 0
@@ -112,7 +115,7 @@ const AddItemModal = ({ isVisible, onClose}: { isVisible: boolean, onClose: ()=>
                             isRequired={false}
                         >
                             <FormControlLabel>
-                                <FormControlLabelText style={styles.label}>Price</FormControlLabelText>
+                                <FormControlLabelText style={styles.label}>Price ({currency})</FormControlLabelText>
                             </FormControlLabel>
                             <Input style={styles.input} size='md'>
                                 <InputField

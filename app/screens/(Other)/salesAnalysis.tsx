@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: height * .01,
         gap: height * .02,
-        backgroundColor: '#F6F6FF',
+        backgroundColor: '#FEFEFF',
     },
     scrollView: {
         gap: height * .02

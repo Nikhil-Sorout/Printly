@@ -54,7 +54,7 @@ const ItemSales = () => {
 
     // Function to group total sales by category_id
     const getCategoryData = () => {
-        const categorySales: Record<number, number> = {};
+        const categorySales: Record<string, number> = {};
 
         transactionsData
             .filter((item) => {
@@ -63,13 +63,13 @@ const ItemSales = () => {
             })
             .forEach((transaction) => {
                 transaction.items.forEach((item) => {
-                    categorySales[item.category_id] = (categorySales[item.category_id] || 0) + item.total_price;
+                    categorySales[item.category_name] = (categorySales[item.category_name] || 0) + item.total_price;
                 });
             });
 
         return Object.keys(categorySales).map((category) => ({
-            label: `Category ${category}`, // Show category_id
-            value: categorySales[Number(category)], // Total sales for that category
+            label: category, // Show category_id
+            value: categorySales[category], // Total sales for that category
             color: generateRandomColor(), // Random color
         }));
     };
@@ -129,7 +129,7 @@ const ItemSales = () => {
 
                     {/* month picker */}
                     <Select style={styles.yearPicker}
-                        defaultValue={selectedMonth?.toString()}
+                        defaultValue={"Jan"}
                         onValueChange={(value) => handleMonthChange(value)}>
                         <SelectTrigger style={styles.trigger} variant="outline" size="sm">
                             <SelectInput placeholder={selectedMonth?.toString()} />
@@ -142,7 +142,7 @@ const ItemSales = () => {
                                     <SelectDragIndicator />
                                 </SelectDragIndicatorWrapper>
                                 {months.map((item) => (
-                                    <SelectItem key={item.toString()} label={`${item.label}`} value={item.value?.toString()} />
+                                    <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
                                 ))}
                             </SelectContent>
                         </SelectPortal>
@@ -225,6 +225,10 @@ const styles = StyleSheet.create({
         width: width * .95,
         justifyContent: 'center',
         gap: height * .02,
+        backgroundColor: '#F6F6FF',
+        padding: height*.01,
+        borderRadius: width*.02,
+        elevation: 2
     },
     yearSalesLabel: {
         fontSize: 18,

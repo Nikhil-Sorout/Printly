@@ -15,23 +15,29 @@ import {
 import { Button, ButtonText } from "@/components/ui/button"
 import { Heading } from "@/components/ui/heading"
 import AddItemModal from '@/components/AddItemModal'
+import SelectCurrencyModal from '@/components/SelectCurrencyModal'
+import settingsThemedStyles from '@/app/styles/settingsThemedStyles'
 
-
-
-// Dimensions
-const { width, height } = Dimensions.get('window')
 
 
 const settings = () => {
+
+    const styles = settingsThemedStyles()
 
     // Log out alert
     const [showAlertDialog, setShowAlertDialog] = React.useState(false)
     const handleClose = () => setShowAlertDialog(false)
 
-    // Modal logic
-    const [showModal, setShowModal] = useState(false)
-    const handleAddItem = () => setShowModal(true);
-    const handleCloseModal = () => setShowModal(false)
+    // Items Modal logic
+    const [itemsModal, setItemsModal] = useState(false)
+    const handleAddItem = () => setItemsModal(true);
+    const closeItemModal = () => setItemsModal(false)
+
+    // Currency Modal Logic
+    const [currModal, setCurrModal] = useState(false)
+    const handleSelectCurrency = ()=>setCurrModal(true)
+    const closeCurrModal = ()=>setCurrModal(false)
+
 
     // Handle log out
     const handleLogOut = () => {
@@ -39,7 +45,7 @@ const settings = () => {
     }
 
     // Get settings options and pass `handleAddItem`
-    const settingsOptionsList = settingsOptions(handleAddItem);  
+    const settingsOptionsList = settingsOptions(handleAddItem, handleSelectCurrency);  
 
     // Function to render setting options
     const renderOption = ({ item }: { item: settingsOption }) =>
@@ -94,35 +100,13 @@ const settings = () => {
 
 
             {/* Add items modal */}
-            <AddItemModal isVisible={showModal} onClose={handleCloseModal} />
+            <AddItemModal isVisible={itemsModal} onClose={closeItemModal} />
+
+            {/* Select currency modal */}
+            <SelectCurrencyModal isVisible={currModal} onClose={closeCurrModal}/>
         </SafeAreaView>
     )
 }
 
-// Styles
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'flex-start',
-        padding: width * .03,
-        gap: height * .05
-    },
-    header: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        fontFamily: 'serif',
-        textAlign: 'center',
-        color: '#9893DA'
-    },
-    settingItem: {
-        width: width * .9,
-        padding: width * .03
-    },
-    itemName: {
-        fontSize: 18,
-        fontWeight: '600',
-        fontFamily: 'sans'
-    }
-})
 
 export default settings
