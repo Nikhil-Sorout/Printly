@@ -12,7 +12,8 @@ const settingsThemedStyles = () => {
             flex: 1,
             justifyContent: 'flex-start',
             padding: width * .03,
-            gap: height * .05
+            gap: height * .05,
+            backgroundColor: theme.background
         },
         header: {
             fontSize: 20,
@@ -28,7 +29,8 @@ const settingsThemedStyles = () => {
         itemName: {
             fontSize: 18,
             fontWeight: '600',
-            fontFamily: 'sans'
+            fontFamily: 'sans',
+            color: theme.neutralText
         }
     })
 }

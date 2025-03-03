@@ -20,11 +20,13 @@ import {
 } from "@/components/ui/select"
 import { ChevronDownIcon } from '@/components/ui/icon'
 import { useCurrency } from '@/app/context/currencyContext'
+import yearlySalesAnalysisThemedStyles from '@/app/styles/yearlySalesAnalysisThemedStyles'
 
 
-const { width, height } = Dimensions.get("window")
 
 const YearlySalesAnalysis = () => {
+
+    const styles = yearlySalesAnalysisThemedStyles();
 
     const fontSize = 10;
     const font = useFont(require('../assets/fonts/SpaceMono-Regular.ttf'), fontSize);
@@ -166,33 +168,6 @@ const YearlySalesAnalysis = () => {
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        height: height * .5,
-        width: width * .95,
-        justifyContent: 'center',
-        gap: height * .02,
-        backgroundColor: '#F6F6FF',
-        padding: height * .01,
-        borderRadius: width * .02,
-        elevation: 2
-    },
-    yearSalesLabel: {
-        fontSize: 18,
-        fontFamily: 'serif'
-    },
-    yearlySales: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-    },
-    yearPicker: {
-        width: width * .2,
-    },
-    trigger: {
-        height: height * .05
-    }
-})
 
 
 export default YearlySalesAnalysis

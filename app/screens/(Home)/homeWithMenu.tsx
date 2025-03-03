@@ -103,8 +103,8 @@ const home = () => {
         return (
 
             <View style={styles.itemBlock}>
-                <Text style={{ fontFamily: 'serif' }}>{item.name}</Text>
-                <Text>{currencySymbol} {Number(convertAmount(item.price).toFixed(2))}</Text>
+                <Text style={styles.itemsText}>{item.name}</Text>
+                <Text style={styles.itemsText}>{currencySymbol} {Number(convertAmount(item.price).toFixed(2))}</Text>
                 <View style={styles.actionButtons}>
                     {itemQuantity > 0 ? (
                         <View style={styles.quantityContainer}>

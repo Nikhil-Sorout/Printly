@@ -20,6 +20,10 @@ const homeWithoutMenuThemedStyles = () => {
             alignItems: 'center',
             gap: height * .02
           },
+          itemsText:{
+            color: theme.neutralText,
+            fontFamily: 'serif'
+          },
           addItemsTxt: {
             fontSize: 16,
             fontWeight: 'bold',

@@ -19,7 +19,7 @@ export const lightTheme: ThemeType = {
   border: "#9893DA",
   shadow: "#00000050",
   buttonText: "#FFFFFF",
-  neutralText: "black"
+  neutralText: "grey"
 };
 
 export const darkTheme: ThemeType = {

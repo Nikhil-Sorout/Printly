@@ -177,6 +177,10 @@ const homeThemedStyles = () => {
             marginLeft: width * 0.02,
             alignItems: 'center',
         },
+        itemsText:{
+            color: theme.neutralText,
+            fontFamily: 'serif'
+          },
     })
 }
 

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
     Modal,
     ModalBackdrop,
@@ -34,11 +34,16 @@ const SelectCurrencyModal = ({ isVisible, onClose }: { isVisible: boolean, onClo
     // Using currency context
     const { currency, setCurrency } = useCurrency();
 
+    const currRef = useRef(currency);
 
     const handleCurrencyChange = (value: string) => {
         setCurrency(value as "INR" | "USD" | "EUR");
     };
 
+    const onCancel = ()=>{
+        setCurrency(currRef.current as "INR" | "USD" | "EUR");
+        onClose();
+    }
 
     return (
         <Modal
@@ -52,13 +57,6 @@ const SelectCurrencyModal = ({ isVisible, onClose }: { isVisible: boolean, onClo
                     <Heading size="md" className="text-typography-950">
                         Choose currency
                     </Heading>
-                    <ModalCloseButton>
-                        <Icon
-                            as={CloseIcon}
-                            size="md"
-                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-                        />
-                    </ModalCloseButton>
                 </ModalHeader>
                 <ModalBody>
                     <Select style={styles.select} selectedValue={currency} onValueChange={handleCurrencyChange} >
@@ -83,7 +81,7 @@ const SelectCurrencyModal = ({ isVisible, onClose }: { isVisible: boolean, onClo
                     <Button
                         variant="outline"
                         action="secondary"
-                        onPress={onClose}
+                        onPress={onCancel}
                     >
                         <ButtonText>Cancel</ButtonText>
                     </Button>
@@ -104,7 +102,7 @@ const styles = StyleSheet.create({
         gap: height * .02
     },
     select: {
-        // height: height*.07,
+        height: height*.05,
     },
     trigger: {
         height: height * .05,

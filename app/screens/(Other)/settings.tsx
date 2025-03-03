@@ -17,6 +17,7 @@ import { Heading } from "@/components/ui/heading"
 import AddItemModal from '@/components/AddItemModal'
 import SelectCurrencyModal from '@/components/SelectCurrencyModal'
 import settingsThemedStyles from '@/app/styles/settingsThemedStyles'
+import ToggleThemeModal from '@/components/ToggleThemeModal'
 
 
 
@@ -38,6 +39,12 @@ const settings = () => {
     const handleSelectCurrency = ()=>setCurrModal(true)
     const closeCurrModal = ()=>setCurrModal(false)
 
+    
+    // Theme Modal Logic
+    const [themeModal, setThemeModal] = useState(false)
+    const handleToggleTheme = ()=>setThemeModal(true)
+    const closeThemeModal = ()=>setThemeModal(false)
+
 
     // Handle log out
     const handleLogOut = () => {
@@ -45,16 +52,16 @@ const settings = () => {
     }
 
     // Get settings options and pass `handleAddItem`
-    const settingsOptionsList = settingsOptions(handleAddItem, handleSelectCurrency);  
+    const settingsOptionsList = settingsOptions(handleAddItem, handleSelectCurrency, handleToggleTheme);  
 
     // Function to render setting options
     const renderOption = ({ item }: { item: settingsOption }) =>
     (
         <>
-            <Divider />
             <Pressable style={styles.settingItem} onPress={item.onPress}>
                 <Text style={styles.itemName}>{item.name}</Text>
             </Pressable>
+            <Divider />
         </>
     )
 
@@ -104,6 +111,9 @@ const settings = () => {
 
             {/* Select currency modal */}
             <SelectCurrencyModal isVisible={currModal} onClose={closeCurrModal}/>
+
+            {/* Toggle Theme modal*/}
+            <ToggleThemeModal isVisible={themeModal} onClose={closeThemeModal}/>
         </SafeAreaView>
     )
 }
