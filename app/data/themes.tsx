@@ -7,29 +7,90 @@ export type ThemeType = {
   border: string;
   shadow: string;
   buttonText: string;
-  neutralText: string
+  neutralText: string;
+  // Gluestack specific colors
+  $light: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    success: string;
+    error: string;
+    warning: string;
+    muted: string;
+  };
+  $dark: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    success: string;
+    error: string;
+    warning: string;
+    muted: string;
+  };
 };
 
 export const lightTheme: ThemeType = {
-  background: '#FEFEFF',
-  cardBackground: '#F6F6FF',
-  buttonBackground: "#9893DA",
-  text: "#9893DA",
-  primary: "#9893DA",
-  border: "#9893DA",
-  shadow: "#00000050",
+  // Main app colors - Using a teal/mint palette
+  background: '#F8FAFB',
+  cardBackground: '#FFFFFF',
+  buttonBackground: "#2DD4BF",
+  text: "#0F766E",
+  primary: "#2DD4BF",
+  border: "#CBD5E1",
+  shadow: "#64748B20",
   buttonText: "#FFFFFF",
-  neutralText: "grey"
+  neutralText: "#475569",
+  
+  // Gluestack specific tokens
+  $light: {
+    primary: '#2DD4BF',
+    secondary: '#0F766E',
+    tertiary: '#E2E8F0',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    muted: '#64748B'
+  },
+  $dark: {
+    primary: '#2DD4BF',
+    secondary: '#0F766E',
+    tertiary: '#1E293B',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    muted: '#94A3B8'
+  }
 };
 
 export const darkTheme: ThemeType = {
-  background: "#1E1E1E",
-  cardBackground: "#2D2D2D",
-  buttonBackground: "#9893DA",
-  text: "#FFFFFF",
-  primary: "#9893DA",
-  border: "#9893DA",
-  shadow: "#00000090",
+  // Main app colors - Dark mode version
+  background: "#0F172A",
+  cardBackground: "#1E293B",
+  buttonBackground: "#2DD4BF",
+  text: "#F8FAFC",
+  primary: "#2DD4BF",
+  border: "#334155",
+  shadow: "#00000040",
   buttonText: "#FFFFFF",
-  neutralText: "white"
+  neutralText: "#CBD5E1",
+  
+  // Gluestack specific tokens
+  $light: {
+    primary: '#2DD4BF',
+    secondary: '#0F766E',
+    tertiary: '#E2E8F0',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    muted: '#64748B'
+  },
+  $dark: {
+    primary: '#2DD4BF',
+    secondary: '#0F766E',
+    tertiary: '#1E293B',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    muted: '#94A3B8'
+  }
 };
