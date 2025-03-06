@@ -1,30 +1,30 @@
-import { View, Text, Dimensions, StyleSheet, Image, Pressable } from 'react-native'
-import React from 'react'
+import { View, Text, Dimensions, StyleSheet, Image, Pressable, ActivityIndicator } from 'react-native'
+import React, { useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Link, router } from 'expo-router'
+import { Link, router, Redirect } from 'expo-router'
 import OnboardingThemedStyles from './styles/OnboardingThemedStyles'
+import { useAuth } from './context/AuthContext'
 
 // Dimensions of screen
 const { width, height } = Dimensions.get('window')
 
 const index = () => {
+    const { userToken, isLoading } = useAuth()
 
-    // Handle Get Started
-    const handlePress = ()=>{
-        router.replace('/screens/(Onboarding)/signUp')
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" />
+            </View>
+        )
     }
-    
-    const styles = OnboardingThemedStyles()
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <Image source={require('../assets/images/Onboarding.jpg')} style={styles.img} />
-            <Text style={styles.welcomeText}>Welcome to Printly! Simplify billing, track sales, and manage your shop effortlessly.</Text>
-            <Pressable style={styles.button} onPress={handlePress}>
-                    <Text style={styles.buttonText}>Get Started</Text>     
-            </Pressable>
-        </SafeAreaView>
-    )
+    // Redirect to the appropriate screen based on authentication state
+    if (userToken) {
+        return <Redirect href="/screens/(Home)" />
+    }
+
+    return <Redirect href="/screens/(Onboarding)/logIn" />
 }
 
 // // StyleSheet
