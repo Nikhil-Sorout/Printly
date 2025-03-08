@@ -7,6 +7,8 @@ import { Link, router } from 'expo-router'
 import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, FormControlLabelText } from '@/components/ui/form-control'
 import { AlertCircleIcon } from "@/components/ui/icon"
 import authScreenThemedStyles from '@/app/styles/authScreenThemedStyles'
+import axios from 'axios'
+import { baseUrl } from '@/helper'
 
 // Dimensions of screen
 const { width, height } = Dimensions.get('window')
@@ -23,7 +25,7 @@ const signUp = () => {
   const [isEmailInvalid, setIsEmailInvalid] = React.useState(false)
 
   // Handle Sign Up
-  const handleSignUp = () => {
+  const handleSignUp = async() => {
     const isPswdInvalid = password.length < 6;
     const isUserNameInvalid = userName.length === 0;
     
@@ -32,7 +34,17 @@ const signUp = () => {
     setIsUserNameInvalid(isUserNameInvalid);
   
     if (!isPswdInvalid && !isEmailInvalid && !isUserNameInvalid) {
-      router.replace('/screens/(Onboarding)/logIn');
+      try {
+        const response = await axios.post(`${baseUrl}/auth/register`, {
+          username: userName,
+          email: email,
+          password: password
+        });
+        console.log(response);
+        router.replace('/screens/(Onboarding)/logIn');
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
   

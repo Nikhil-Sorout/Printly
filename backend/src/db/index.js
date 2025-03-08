@@ -3,16 +3,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { Pool } = pg;
+const { Client } = pg;
 
-const pool = new Pool({
+const client = new Client({
   connectionString: process.env.DATABASE_URL,
 });
+
+client.connect()
+.then(()=>console.log("Connected to the database", client.connectionParameters.database, client.connectionParameters.host, client.connectionParameters.port))
+.catch((err)=>console.error("Error connecting to the database", err))
+
 
 export const query = async (text, params) => {
   const start = Date.now();
   try {
-    const res = await pool.query(text, params);
+    const res = await client.query(text, params);
     const duration = Date.now() - start;
     console.log('Executed query', { text, duration, rows: res.rowCount });
     return res;
@@ -22,4 +27,4 @@ export const query = async (text, params) => {
   }
 };
 
-export default pool; 
+export default client; 

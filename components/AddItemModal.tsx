@@ -6,16 +6,21 @@ import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalF
 import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, FormControlLabelText } from '@/components/ui/form-control';
 import { Input, InputField } from '@/components/ui/input';
 import { useCurrency } from '@/app/context/currencyContext';
-
+import axios from 'axios';
+import { baseUrl } from '@/helper';
+import { ErrorModal } from '@/app/components/ErrorModal';
+import { useApiError } from '@/app/hooks/useApiError';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window')
 
-const AddItemModal = ({ isVisible, onClose}: { isVisible: boolean, onClose: ()=>void}) => {
+const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () => void }) => {
 
+    const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
-    const {currency} = useCurrency()
-  
-    const saveItem = () => {
+    const { currency } = useCurrency()
+
+    const saveItem = async () => {
         const isCategoryInvalid = category.length <= 0
         const isPriceInvalid = price.length <= 0
         const isItemInvalid = item.length <= 0
@@ -24,8 +29,42 @@ const AddItemModal = ({ isVisible, onClose}: { isVisible: boolean, onClose: ()=>
         setIsItemInvalid(isItemInvalid)
         setIsPriceInvalid(isPriceInvalid)
 
+
+        const token = await AsyncStorage.getItem('userToken');
+        const api = axios.create({
+            baseURL: baseUrl,
+            headers:{
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+
         if (!isCategoryInvalid && !isItemInvalid && !isPriceInvalid) {
-            onClose();
+            try {
+                
+                const response = await api.post(`/items`,
+                    {
+                        name: item,
+                        price: price,
+                        category: category,
+                    }
+                );
+                // console.log(response);
+                if (response.status !== 201) {
+                    showError(response.status)
+                    return;
+                }
+                onClose();
+
+            }
+            catch (err) {
+                console.log("Caught the error ", err);
+                showError(undefined, "Network error occured");
+            }
+
+
+
+
         }
     }
 
@@ -139,7 +178,14 @@ const AddItemModal = ({ isVisible, onClose}: { isVisible: boolean, onClose: ()=>
                         </Button>
                     </ModalFooter>
                 </ModalContent>
-            </Modal></>
+            </Modal>
+            <ErrorModal
+                isVisible={isModalVisible}
+                statusCode={errorDetails.statusCode}
+                message={errorDetails.message}
+                onClose={hideError}
+            />
+        </>
     )
 }
 

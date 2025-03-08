@@ -8,28 +8,14 @@ const router = express.Router();
 // Get all items with pagination
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
-
     const result = await query(
-      'SELECT * FROM items ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-      [limit, offset]
+      'SELECT * FROM items ORDER BY category'
     );
-
-    const countResult = await query('SELECT COUNT(*) FROM items');
-    const totalItems = parseInt(countResult.rows[0].count);
 
     res.json({
       status: 'success',
       data: {
-        items: result.rows,
-        pagination: {
-          page,
-          limit,
-          total: totalItems,
-          pages: Math.ceil(totalItems / limit)
-        }
+        items: result.rows
       }
     });
   } catch (error) {
@@ -43,8 +29,8 @@ router.post('/', authenticateToken, async (req, res, next) => {
     const item = await itemSchema.validateAsync(req.body);
     
     const result = await query(
-      'INSERT INTO items (name, price, category, stock) VALUES ($1, $2, $3, $4) RETURNING *',
-      [item.name, item.price, item.category, item.stock]
+      'INSERT INTO items (name, price, category) VALUES ($1, $2, $3) RETURNING *',
+      [item.name, item.price, item.category]
     );
 
     res.status(201).json({

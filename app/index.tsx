@@ -10,7 +10,7 @@ const { width, height } = Dimensions.get('window')
 
 const index = () => {
     const { userToken, isLoading } = useAuth()
-
+    console.log(userToken);
     if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

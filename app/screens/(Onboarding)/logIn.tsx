@@ -7,11 +7,17 @@ import { Link, router } from 'expo-router'
 import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, FormControlLabelText } from '@/components/ui/form-control'
 import { AlertCircleIcon } from "@/components/ui/icon"
 import authScreenThemedStyles from '@/app/styles/authScreenThemedStyles'
+import axios from 'axios'
+import { baseUrl } from '@/helper'
+import { useApiError } from '../../hooks/useApiError'
+import { ErrorModal } from '../../components/ErrorModal'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // Dimensions of screen
 const { width, height } = Dimensions.get('window')
 
 const logIn = () => {
+    const { isModalVisible, errorDetails, showError, hideError } = useApiError()
 
     // Input parameters
     const [email, setEmail] = useState('')
@@ -21,14 +27,31 @@ const logIn = () => {
     const [isEmailInvalid, setIsEmailInvalid] = React.useState(false)
 
     // Handle Sign Up
-    const handleLogIn = () => {
+    const handleLogIn = async() => {
         const isPswdInvalid = password.length < 6;
 
         setIsPswdInvalid(isPswdInvalid);
         setIsEmailInvalid(isEmailInvalid);
 
         if (!isPswdInvalid && !isEmailInvalid) {
-            router.replace('/screens/(Home)');
+            try {
+                const response = await axios.post(`${baseUrl}/auth/login`, {
+                    email: email,
+                    password: password
+                });
+                if (response.status !== 201) {
+                    showError(response.status);
+                    return;
+                }
+
+                // Handle successful login
+                const token = response.data.data.token;
+                await AsyncStorage.setItem('userToken', token);
+                router.replace('/screens/(Home)');
+            } catch (error) {
+                console.log("Cathced the error", error)
+                showError(undefined, 'Network error occurred');
+            }
         }
     };
 
@@ -112,7 +135,14 @@ const logIn = () => {
             <Button size="md" variant="solid" action="primary" onPress={handleLogIn} style={styles.signInBtn}>
                 <ButtonText>Log In</ButtonText>
             </Button>
-            <Text style={styles.footerTxt}>Don't have an account? <Link href={'/screens/(Home)'} replace style={styles.loginTxt}>Sign Up</Link></Text>
+            <Text style={styles.footerTxt}>Don't have an account? <Link href={'/screens/(Onboarding)/signUp'} replace style={styles.loginTxt}>Sign Up</Link></Text>
+
+            <ErrorModal
+                isVisible={isModalVisible}
+                statusCode={errorDetails.statusCode}
+                message={errorDetails.message}
+                onClose={hideError}
+            />
         </SafeAreaView>
     )
 }

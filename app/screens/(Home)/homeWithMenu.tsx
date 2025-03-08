@@ -1,13 +1,40 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, FlatList, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, FlatList, Dimensions, TouchableWithoutFeedback, Pressable } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { menuData } from '../../data/menuData';
 import { cartSlice } from '../../redux/cartSlice';
 import { Divider } from '@/components/ui/divider';
 import { useCurrency } from '@/app/context/currencyContext';
 import homeThemedStyles from '@/app/styles/homeThemedStyles';
+import { Entypo } from '@expo/vector-icons';
+import EditItemModal from '@/components/editItemModal';
 
+interface ProcessedMenuItem {
+    id: number;
+    name: string;
+    category: string;
+    price: number; // Converted to number
+    created_at: string;
+    updated_at: string;
+}
 
+// Category group structure
+interface CategoryGroup {
+    id: string;
+    name: string;
+    items: ProcessedMenuItem[];
+}
+
+type MenuData = OldMenuItem[] | CategoryGroup[];
+
+interface OldMenuItem {
+    id: number;
+    name: string;
+    category: string;
+    price: number;
+    created_at: string;
+    updated_at: string;
+  }
 
 interface Item {
     name: string;
@@ -28,15 +55,50 @@ interface CartState {
 
 const { width, height } = Dimensions.get('window')
 
-const home = () => {
+const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
+
+    console.log(menuData)
+
+    const transformMenuData = (menuData: MenuData): CategoryGroup[]  => {
+        if (Array.isArray(menuData) && menuData.length > 0 && 'category' in menuData[0]) {
+            const oldMenu = menuData as OldMenuItem[];
+            const groupedData: Record<string, CategoryGroup> = {};
+
+            oldMenu.forEach(({ category, id, name, price, created_at, updated_at }) => {
+                if (!groupedData[category]) {
+                    groupedData[category] = {
+                        id: category,
+                        name: category,
+                        items: [],
+                    };
+                }
+                groupedData[category].items.push({ id, name, category, price, created_at, updated_at });
+            });
+
+            return Object.values(groupedData);
+        }
+
+        return menuData as CategoryGroup[];
+    };
+
+    // Use this function inside useMemo to avoid unnecessary recalculations
+    const processedMenuData: CategoryGroup[] = useMemo(() => transformMenuData(menuData), [menuData]);
+
+
+
+
 
     const styles = homeThemedStyles()
 
-    const {currency, currencySymbol, convertAmount} = useCurrency();
+    const { currency, currencySymbol, convertAmount } = useCurrency();
 
 
     const dispatch = useDispatch();
     const cart = useSelector((state: { cart: CartState }) => state.cart);
+
+    const [editItemModal, setEditItemModal] = useState(false)
+
+    const [updateItemModal, setUpdateItemModal] = useState(false)
 
     const [modalVisible, setModalVisible] = useState(false);
     const [cartModalVisible, setCartModalVisible] = useState(false);
@@ -62,7 +124,7 @@ const home = () => {
         const normalizedQuery = query.trim().toLowerCase();
 
         // Check if the query matches a category name
-        const categoryIndex = menuData.findIndex(
+        const categoryIndex = processedMenuData.findIndex(
             (cat) => cat.name.toLowerCase() === normalizedQuery
         );
 
@@ -90,6 +152,13 @@ const home = () => {
         alert('No matching category or dish found');
     };
 
+
+
+
+    const handleUpdateItem = () => {
+
+    }
+
     const handleAddToCart = (item: Item) => {
         dispatch(cartSlice.actions.addItem(item));
     };
@@ -103,8 +172,11 @@ const home = () => {
         return (
 
             <View style={styles.itemBlock}>
+                <Pressable style={{ position: 'absolute', right: 10, top: 10 }} onPress={() => setEditItemModal(true)}>
+                    <Entypo name='dots-three-vertical' color={'#2DD4BF'} size={14} />
+                </Pressable>
                 <Text style={styles.itemsText}>{item.name}</Text>
-                <Text style={styles.itemsText}>{currencySymbol} {Number(convertAmount(item.price).toFixed(2))}</Text>
+                <Text style={styles.itemsText}>{currencySymbol} {convertAmount(item.price)}</Text>
                 <View style={styles.actionButtons}>
                     {itemQuantity > 0 ? (
                         <View style={styles.quantityContainer}>
@@ -162,7 +234,7 @@ const home = () => {
             />
             <FlatList
                 ref={flatListRef}
-                data={menuData}
+                data={processedMenuData}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderCategory}
                 showsVerticalScrollIndicator={false}
@@ -193,7 +265,7 @@ const home = () => {
                         <TouchableWithoutFeedback>
                             <View style={styles.modalContent}>
                                 <Divider />
-                                {menuData.map((category) => (
+                                {processedMenuData.map((category) => (
                                     <TouchableOpacity
                                         key={category.id}
                                         onPress={() => {
@@ -260,6 +332,11 @@ const home = () => {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
+
+            {/* Edit Item Modal */}
+
+            {/* <EditItemModal visible={editItemModal} onClose={()=>setEditItemModal(false)} onUpdatePrice={} onDelete={}/> */}
+
         </View>
     )
 }

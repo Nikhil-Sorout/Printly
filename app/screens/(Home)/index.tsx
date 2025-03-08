@@ -1,7 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Dimensions} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Dimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { menuData } from '../../data/menuData';
 import Home from './homeWithMenu';
 import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
 import { AddIcon, AlertCircleIcon, CloseIcon, Icon } from '@/components/ui/icon';
@@ -12,6 +11,38 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '@/components/Header';
 import AddItemModal from '@/components/AddItemModal';
 import homeWithoutMenuThemedStyles from '@/app/styles/homeWithoutMenuThemedStyles';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { baseUrl } from '@/helper';
+import { useApiError } from '@/app/hooks/useApiError';
+
+
+type MenuItem = {
+  id: number;
+  name: string;
+  category: string;
+  price: string; // Changed from string to number
+  created_at: string;
+  updated_at: string;
+};
+
+interface ProcessedMenuItem {
+  id: number;
+  name: string;
+  category: string;
+  price: number; // Converted to number
+  created_at: string;
+  updated_at: string;
+}
+
+// Category group structure
+interface CategoryGroup {
+  id: string;
+  name: string;
+  items: ProcessedMenuItem[];
+}
+
+
 
 
 
@@ -22,7 +53,47 @@ const Index: React.FC = () => {
 
   const [showModal, setShowModal] = React.useState(false)
 
+  const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
+  const [menuData, setMenuData] = useState<CategoryGroup[]>([])
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        console.log(token)
+        if (!token) {
+          console.log("No token found");
+          return;
+        }
+
+        const response = await axios.get(`${baseUrl}/items/`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log('Menu ', response.data.data.items);
+        const items = response.data.data.items
+        setMenuData(response.data.data.items)
+        if (response.status !== 201) {
+          showError(response.status);
+          return;
+        }
+
+      } catch (err) {
+        console.log('Caught the error ', err);
+        showError(undefined, 'Network Error Occurred');
+        return []
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  console.log(menuData)
   // Will show the modal
   const handleAddItem = () => {
     setShowModal(true)
@@ -36,7 +107,7 @@ const Index: React.FC = () => {
   return (
     <SafeAreaView style={styles.mainContainer}>
       <Header />
-      {menuData.length > 0 ? <Home /> : (
+      {menuData.length > 0 ? <Home menuData={menuData} /> : (
         <View style={styles.container}>
           <Text style={styles.addItemsTxt}>No items available right now!</Text>
           {/* Add items button */}

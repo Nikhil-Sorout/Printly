@@ -4,7 +4,6 @@ export const itemSchema = Joi.object({
   name: Joi.string().required(),
   price: Joi.number().positive().required(),
   category: Joi.string().required(),
-  stock: Joi.number().integer().min(0).required()
 });
 
 export const transactionSchema = Joi.object({
@@ -24,6 +23,12 @@ export const customerSchema = Joi.object({
 });
 
 export const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required()
+}); 
+
+export const signUpSchema = Joi.object({
   username: Joi.string().required(),
+  email: Joi.string().email().required(),
   password: Joi.string().required()
 }); 
