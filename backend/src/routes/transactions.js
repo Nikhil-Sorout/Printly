@@ -8,11 +8,11 @@ const router = express.Router();
 // Create new transaction
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
-    const { items, customer_id } = await transactionSchema.validateAsync(req.body);
-    
+    const { items } = await transactionSchema.validateAsync(req.body);
+
     // Start transaction
     await query('BEGIN');
-    
+
     let total_amount = 0;
     const itemDetails = [];
 
@@ -22,7 +22,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
         'SELECT * FROM items WHERE id = $1 FOR UPDATE',
         [item.item_id]
       );
-      
+
       if (itemResult.rows.length === 0) {
         await query('ROLLBACK');
         return res.status(404).json({
@@ -32,21 +32,21 @@ router.post('/', authenticateToken, async (req, res, next) => {
       }
 
       const dbItem = itemResult.rows[0];
-      
+
       // Check stock
-      if (dbItem.stock < item.quantity) {
-        await query('ROLLBACK');
-        return res.status(400).json({
-          status: 'error',
-          message: `Insufficient stock for item ${dbItem.name}`
-        });
-      }
+      // if (dbItem.stock < item.quantity) {
+      //   await query('ROLLBACK');
+      //   return res.status(400).json({
+      //     status: 'error',
+      //     message: `Insufficient stock for item ${dbItem.name}`
+      //   });
+      // }
 
       // Update stock
-      await query(
-        'UPDATE items SET stock = stock - $1 WHERE id = $2',
-        [item.quantity, item.item_id]
-      );
+      // await query(
+      //   'UPDATE items SET stock = stock - $1 WHERE id = $2',
+      //   [item.quantity, item.item_id]
+      // );
 
       total_amount += dbItem.price * item.quantity;
       itemDetails.push({
@@ -58,16 +58,16 @@ router.post('/', authenticateToken, async (req, res, next) => {
 
     // Create transaction
     const transactionResult = await query(
-      'INSERT INTO transactions (total_amount, customer_id) VALUES ($1, $2) RETURNING *',
-      [total_amount, customer_id]
+      'INSERT INTO transactions (total_amount) VALUES ($1) RETURNING *',
+      [total_amount]
     );
 
     // Create transaction items
     for (const item of items) {
       await query(
         'INSERT INTO transaction_items (transaction_id, item_id, quantity, price_at_time) VALUES ($1, $2, $3, $4)',
-        [transactionResult.rows[0].id, item.item_id, item.quantity, 
-         itemDetails.find(i => i.id === item.item_id).price]
+        [transactionResult.rows[0].id, item.item_id, item.quantity,
+        itemDetails.find(i => i.id === item.item_id).price]
       );
     }
 
@@ -94,9 +94,8 @@ router.get('/:id/receipt', authenticateToken, async (req, res, next) => {
     const { id } = req.params;
 
     const transactionResult = await query(
-      `SELECT t.*, c.name as customer_name, c.phone as customer_phone
+      `SELECT t.*
        FROM transactions t
-       LEFT JOIN customers c ON t.customer_id = c.id
        WHERE t.id = $1`,
       [id]
     );
@@ -140,14 +139,10 @@ router.get('/:id/receipt', authenticateToken, async (req, res, next) => {
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
     const {
-      page = 1,
-      limit = 10,
       start_date,
       end_date,
-      customer_id
     } = req.query;
 
-    const offset = (page - 1) * limit;
     let whereClause = '';
     const params = [];
     let paramCount = 1;
@@ -162,19 +157,17 @@ router.get('/', authenticateToken, async (req, res, next) => {
       params.push(new Date(end_date));
     }
 
-    if (customer_id) {
-      whereClause += `${whereClause ? ' AND ' : 'WHERE '} customer_id = $${paramCount++}`;
-      params.push(customer_id);
-    }
+    // if (customer_id) {
+    //   whereClause += `${whereClause ? ' AND ' : 'WHERE '} customer_id = $${paramCount++}`;
+    //   params.push(customer_id);
+    // }
 
     const result = await query(
-      `SELECT t.*, c.name as customer_name
+      `SELECT t.*
        FROM transactions t
-       LEFT JOIN customers c ON t.customer_id = c.id
        ${whereClause}
-       ORDER BY t.created_at DESC
-       LIMIT $${paramCount++} OFFSET $${paramCount}`,
-      [...params, limit, offset]
+       ORDER BY t.created_at DESC`,
+      [...params]
     );
 
     const countResult = await query(
@@ -182,16 +175,10 @@ router.get('/', authenticateToken, async (req, res, next) => {
       params
     );
 
-    res.json({
+    res.status(200).json({
       status: 'success',
       data: {
         transactions: result.rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: parseInt(countResult.rows[0].count),
-          pages: Math.ceil(countResult.rows[0].count / limit)
-        }
       }
     });
   } catch (error) {

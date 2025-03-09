@@ -13,7 +13,7 @@ export const transactionSchema = Joi.object({
       quantity: Joi.number().integer().positive().required()
     })
   ).required(),
-  customer_id: Joi.number().optional()
+  // customer_id: Joi.number().optional()
 });
 
 export const customerSchema = Joi.object({

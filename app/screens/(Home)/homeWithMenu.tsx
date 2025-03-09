@@ -1,13 +1,17 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, FlatList, Dimensions, TouchableWithoutFeedback, Pressable } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, FlatList, Dimensions, TouchableWithoutFeedback, Pressable, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { menuData } from '../../data/menuData';
 import { cartSlice } from '../../redux/cartSlice';
 import { Divider } from '@/components/ui/divider';
 import { useCurrency } from '@/app/context/currencyContext';
 import homeThemedStyles from '@/app/styles/homeThemedStyles';
 import { Entypo } from '@expo/vector-icons';
-import EditItemModal from '@/components/editItemModal';
+import EditItemModal from '@/components/EditItemModalComp';
+import axios from 'axios';
+import { baseUrl } from '@/helper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useApiError } from '@/app/hooks/useApiError';
+
 
 interface ProcessedMenuItem {
     id: number;
@@ -34,11 +38,12 @@ interface OldMenuItem {
     price: number;
     created_at: string;
     updated_at: string;
-  }
+}
 
 interface Item {
     name: string;
     price: number;
+    category: string
 }
 
 interface CartItem {
@@ -55,11 +60,48 @@ interface CartState {
 
 const { width, height } = Dimensions.get('window')
 
-const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
+const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: () => void }) => {
+
+
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchData?.(); // Fetch updated data
+        setTimeout(() => {
+            setRefreshing(false);
+        }, 1000);
+    }, []);
 
     console.log(menuData)
+    const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
-    const transformMenuData = (menuData: MenuData): CategoryGroup[]  => {
+    function convertToTransactionFormat(foodItems:any) {
+        // Initialize an array to store the formatted items
+        const items = [];
+        
+        // Iterate through each food item in the object
+        for (const itemName in foodItems) {
+          const item = foodItems[itemName];
+          
+          // Create a new object with the required structure
+          items.push({
+            item_id: item.id,
+            quantity: item.quantity
+          });
+        }
+        
+        // Return the formatted data
+        return {
+          items: items
+        };
+      }
+      
+
+
+
+
+    const transformMenuData = (menuData: MenuData): CategoryGroup[] => {
         if (Array.isArray(menuData) && menuData.length > 0 && 'category' in menuData[0]) {
             const oldMenu = menuData as OldMenuItem[];
             const groupedData: Record<string, CategoryGroup> = {};
@@ -89,34 +131,106 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
 
 
     const styles = homeThemedStyles()
-
     const { currency, currencySymbol, convertAmount } = useCurrency();
-
-
+    
+    
     const dispatch = useDispatch();
     const cart = useSelector((state: { cart: CartState }) => state.cart);
-
+    
+    const [selectedItem, setSelectedItem] = useState<Item | null>(null)
+    
     const [editItemModal, setEditItemModal] = useState(false)
-
+    
     const [updateItemModal, setUpdateItemModal] = useState(false)
-
+    
+    const [deleteItemModal, setDeleteItemModal] = useState(false)
+    
+    
     const [modalVisible, setModalVisible] = useState(false);
     const [cartModalVisible, setCartModalVisible] = useState(false);
-
+    
     const flatListRef = useRef<FlatList<any> | null>(null);
-
-
+    
+    
     const handleDiscardCart = () => {
         dispatch(cartSlice.actions.clearCart());
         setCartModalVisible(false);
     };
+    console.log("items: ", cart.items)
+
+    const handleSaveTransaction = async () => {
+        try {
+            const modifiedData = convertToTransactionFormat(cart.items)
+            console.log(modifiedData)
+            const token = await AsyncStorage.getItem('userToken')
+            const response = await axios.post(`${baseUrl}/transactions`,
+                {
+                    items: modifiedData.items
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                })
+            console.log(response)
+            if(response.status !== 201){
+                showError(response.status)
+                return
+            }
+            dispatch(cartSlice.actions.clearCart())
+            setCartModalVisible(false)
+
+        }
+        catch(err){
+            console.log("caught you ", err)
+            showError(undefined, 'Network Error Occured')
+        }
+    }
+
+
+
+
+
+
+    const handleDeleteItem = async () => {
+        setEditItemModal(false)
+        try {
+            const token = await AsyncStorage.getItem('userToken')
+            console.log(selectedItem?.name, selectedItem?.price)
+            const response = await axios.delete(`${baseUrl}/items/delete/${selectedItem?.name}/${selectedItem?.price}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+            console.log(response)
+            setDeleteItemModal(false)
+            fetchData()
+            if (response.status !== 201) {
+                showError(response.status)
+                return
+            }
+        }
+        catch (err) {
+            console.log("Caught you ", err)
+            showError(undefined, "Network Error Occured")
+        }
+    }
+
+
+    const handleUpdateItem = () => {
+        setEditItemModal(false)
+        setUpdateItemModal(true)
+    }
 
 
     const renderCartItem = (item: CartItem) => (
         <View style={styles.cartItem}>
             <Text style={styles.cartItemText}>{item.name}</Text>
             <Text style={styles.cartItemText}>x{item.quantity}</Text>
-            <Text style={styles.cartItemText}>{currencySymbol} {Number(convertAmount(item.price).toFixed(2)) * item.quantity}</Text>
+            <Text style={styles.cartItemText}>{currencySymbol} {Number(convertAmount(item.price)) * item.quantity}</Text>
         </View>
     );
 
@@ -134,8 +248,8 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
         }
 
         // Check if the query matches a dish name
-        for (let i = 0; i < menuData.length; i++) {
-            const category = menuData[i];
+        for (let i = 0; i < processedMenuData.length; i++) {
+            const category = processedMenuData[i];
             const itemIndex = category.items.findIndex(
                 (cat) => cat.name.toLowerCase().includes(normalizedQuery)
             );
@@ -153,11 +267,8 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
     };
 
 
+    console.log(cart.items)
 
-
-    const handleUpdateItem = () => {
-
-    }
 
     const handleAddToCart = (item: Item) => {
         dispatch(cartSlice.actions.addItem(item));
@@ -172,7 +283,10 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
         return (
 
             <View style={styles.itemBlock}>
-                <Pressable style={{ position: 'absolute', right: 10, top: 10 }} onPress={() => setEditItemModal(true)}>
+                <Pressable style={{ position: 'absolute', right: 10, top: 10 }} onPress={() => {
+                    setSelectedItem(item)
+                    setEditItemModal(true)
+                }}>
                     <Entypo name='dots-three-vertical' color={'#2DD4BF'} size={14} />
                 </Pressable>
                 <Text style={styles.itemsText}>{item.name}</Text>
@@ -238,6 +352,9 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderCategory}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
             />
 
             {/* Floating Menu Button */}
@@ -250,7 +367,7 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
 
             {/* Cart Summary Button */}
             <TouchableOpacity style={styles.cartButton} onPress={() => setCartModalVisible(true)}>
-                <Text style={{ color: '#9893DA' }}>Cart: {cart.itemCount} items (${cart.total})</Text>
+                <Text style={{ color: '#9893DA' }}>Cart: {cart.itemCount} items ({currencySymbol}{cart.total})</Text>
             </TouchableOpacity>
 
             {/* Modal for Categories */}
@@ -308,7 +425,7 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
                                         Total Items: {cart.itemCount}
                                     </Text>
                                     <Text style={styles.cartSummaryText}>
-                                        Total Price: {currencySymbol} {convertAmount(cart.total).toFixed(2)}
+                                        Total Price: {currencySymbol} {convertAmount(cart.total)}
                                     </Text>
                                 </View>
                                 <View style={styles.cartButtons}>
@@ -320,11 +437,9 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.printButton}
-                                        onPress={() => {
-                                            alert('Print functionality coming soon!');
-                                        }}
+                                        onPress={handleSaveTransaction}
                                     >
-                                        <Text style={{ color: '#FFF' }}>Print</Text>
+                                        <Text style={{ color: '#FFF' }}>Save</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -335,7 +450,10 @@ const home = ({ menuData }: { menuData: CategoryGroup[] }) => {
 
             {/* Edit Item Modal */}
 
-            {/* <EditItemModal visible={editItemModal} onClose={()=>setEditItemModal(false)} onUpdatePrice={} onDelete={}/> */}
+            <EditItemModal visible={editItemModal} onClose={() => setEditItemModal(false)} onUpdatePrice={handleUpdateItem} onDelete={handleDeleteItem} deleteModalVisible={deleteItemModal} updateModalVisible={updateItemModal} selectedItem={selectedItem} setDeleteModalVisible={setDeleteItemModal} setUpdatedModalVisible={setUpdateItemModal} fetchData={fetchData} />
+
+
+
 
         </View>
     )

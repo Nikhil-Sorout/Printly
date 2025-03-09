@@ -34,7 +34,7 @@ export const cartSlice = createSlice({
       } else {
         state.items[item.name] = { ...item, quantity: 1 };
       }
-      state.total += item.price;
+      state.total += Number(item.price);
       state.itemCount += 1;
     },
     removeItem: (state, action) => {

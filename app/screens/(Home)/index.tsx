@@ -48,6 +48,7 @@ interface CategoryGroup {
 
 
 const Index: React.FC = () => {
+  
 
   const styles = homeWithoutMenuThemedStyles();
 
@@ -57,39 +58,40 @@ const Index: React.FC = () => {
 
   const [menuData, setMenuData] = useState<CategoryGroup[]>([])
 
+  
+  const fetchData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      console.log(token)
+      if (!token) {
+        console.log("No token found");
+        return;
+      }
+
+      const response = await axios.get(`${baseUrl}/items/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log('Menu ', response.data.data.items);
+      const items = response.data.data.items
+      setMenuData(response.data.data.items)
+      if (response.status !== 201) {
+        showError(response.status);
+        return;
+      }
+
+    } catch (err) {
+      console.log('Caught the error ', err);
+      showError(undefined, 'Network Error Occurred');
+      return []
+    }
+  };
+
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-        console.log(token)
-        if (!token) {
-          console.log("No token found");
-          return;
-        }
-
-        const response = await axios.get(`${baseUrl}/items/`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        console.log('Menu ', response.data.data.items);
-        const items = response.data.data.items
-        setMenuData(response.data.data.items)
-        if (response.status !== 201) {
-          showError(response.status);
-          return;
-        }
-
-      } catch (err) {
-        console.log('Caught the error ', err);
-        showError(undefined, 'Network Error Occurred');
-        return []
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -107,7 +109,7 @@ const Index: React.FC = () => {
   return (
     <SafeAreaView style={styles.mainContainer}>
       <Header />
-      {menuData.length > 0 ? <Home menuData={menuData} /> : (
+      {menuData.length > 0 ? <Home menuData={menuData} fetchData={fetchData} /> : (
         <View style={styles.container}>
           <Text style={styles.addItemsTxt}>No items available right now!</Text>
           {/* Add items button */}
@@ -117,13 +119,11 @@ const Index: React.FC = () => {
           </Button>
 
           {/* Add items modal */}
-          <AddItemModal isVisible={showModal} onClose={handleCloseModal} />
+          <AddItemModal isVisible={showModal} onClose={handleCloseModal} fetchData={fetchData} addItem={true}/>
         </View>)}
     </SafeAreaView>
   )
 };
-
-
 
 
 export default Index;

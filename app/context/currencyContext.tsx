@@ -31,7 +31,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currency, setCurrency] = useState<Currency>("INR");
   const currencySymbol = currencySymbols[currency] ||  '₹';
 
-  const convertAmount = (amount: number, fromCurrency: Currency = "USD") => {
+  const convertAmount = (amount: number, fromCurrency: Currency = "INR") => {
     if (fromCurrency === currency) return amount; // No conversion needed
     const inUSD = amount / exchangeRates[fromCurrency]; // Convert to USD
     return inUSD * exchangeRates[currency]; // Convert to target currency

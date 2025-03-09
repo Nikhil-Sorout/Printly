@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
 import { AddIcon, AlertCircleIcon, CloseIcon, Icon } from '@/components/ui/icon';
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from '@/components/ui/modal';
@@ -14,11 +14,96 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window')
 
-const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () => void }) => {
+const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCategory }: { isVisible: boolean, onClose: () => void, fetchData?: () => void, addItem: boolean, ItemName?: string, ItemCategory?: string }) => {
+
+
 
     const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
     const { currency } = useCurrency()
+
+    const [category, setCategory] = useState('')
+    const [item, setItem] = useState('')
+    const [price, setPrice] = useState('')
+
+    const [isCategoryInvalid, setIsCategoryInvalid] = React.useState(false)
+    const [isItemInvalid, setIsItemInvalid] = React.useState(false)
+    const [isPriceInvalid, setIsPriceInvalid] = React.useState(false)
+
+
+    const [localPrice, setLocalPrice] = useState('');
+    const [localItem, setLocalItem] = useState('');
+    const [localCategory, setLocalCategory] = useState('');
+
+
+    // Debounce effect to update the main state after user stops typing
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setPrice(localPrice);
+        }, 300); // 300ms delay
+
+        return () => clearTimeout(timeout); // Cleanup timeout on unmount
+    }, [localPrice]);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setItem(localItem);
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [localItem]);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setCategory(localCategory);
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [localCategory]);
+
+    const updateItem = async () => {
+        // const isCategoryInvalid = category.length <= 0
+        const isPriceInvalid = price.length <= 0
+        // const isItemInvalid = item.length <= 0
+
+        // setIsCategoryInvalid(isCategoryInvalid)
+        // setIsItemInvalid(isItemInvalid)
+        setIsPriceInvalid(isPriceInvalid)
+
+
+        const token = await AsyncStorage.getItem('userToken');
+        const api = axios.create({
+            baseURL: baseUrl,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        if (!isPriceInvalid) {
+            try {
+                console.log(item, category, price, ItemName, ItemCategory)
+                const response = await api.put(`/items/${ItemName}/${ItemCategory}`,
+                    {
+                        name: ItemName,
+                        category: ItemCategory,
+                        price: price
+                    }
+                )
+                fetchData?.()
+                if (response.status !== 200) {
+                    showError(response.status)
+                    return;
+                }
+                onClose()
+            }
+            catch (err) {
+                console.log("Caught the error ", err);
+                showError(undefined, "Network error occured");
+            }
+        }
+    }
+
+
 
     const saveItem = async () => {
         const isCategoryInvalid = category.length <= 0
@@ -33,7 +118,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
         const token = await AsyncStorage.getItem('userToken');
         const api = axios.create({
             baseURL: baseUrl,
-            headers:{
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
@@ -41,7 +126,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
 
         if (!isCategoryInvalid && !isItemInvalid && !isPriceInvalid) {
             try {
-                
+
                 const response = await api.post(`/items`,
                     {
                         name: item,
@@ -50,10 +135,14 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
                     }
                 );
                 // console.log(response);
+                fetchData?.()
                 if (response.status !== 201) {
                     showError(response.status)
                     return;
                 }
+                setCategory('')
+                setPrice('')
+                setItem('')
                 onClose();
 
             }
@@ -69,13 +158,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
     }
 
 
-    const [category, setCategory] = useState('')
-    const [item, setItem] = useState('')
-    const [price, setPrice] = useState('')
 
-    const [isCategoryInvalid, setIsCategoryInvalid] = React.useState(false)
-    const [isItemInvalid, setIsItemInvalid] = React.useState(false)
-    const [isPriceInvalid, setIsPriceInvalid] = React.useState(false)
 
     return (
         <>
@@ -83,7 +166,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
             <Modal isOpen={isVisible} onClose={onClose}>
                 <ModalContent>
                     <ModalHeader>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#9893DA' }}>Add Item</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#9893DA' }}>{addItem ? 'Add Item' : 'Update Item'}</Text>
                         <ModalCloseButton>
                             <Icon as={CloseIcon} size="md" />
                         </ModalCloseButton>
@@ -95,8 +178,8 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
                             style={styles.formControl}
                             isInvalid={isCategoryInvalid}
                             size="md"
-                            isDisabled={false}
-                            isReadOnly={false}
+                            isDisabled={addItem ? false : true}
+                            isReadOnly={addItem ? false : true}
                             isRequired={false}
                         >
                             <FormControlLabel>
@@ -104,7 +187,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
                             </FormControlLabel>
                             <Input style={styles.input} size='md'>
                                 <InputField
-                                    placeholder="Enter category of item"
+                                    placeholder={addItem ? "Enter category of item" : ItemCategory}
                                     value={category}
                                     onChangeText={(text) => setCategory(text)}
                                 />
@@ -122,8 +205,8 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
                             style={styles.formControl}
                             isInvalid={isItemInvalid}
                             size="md"
-                            isDisabled={false}
-                            isReadOnly={false}
+                            isDisabled={addItem ? false : true}
+                            isReadOnly={addItem ? false : true}
                             isRequired={false}
                         >
                             <FormControlLabel>
@@ -131,7 +214,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
                             </FormControlLabel>
                             <Input style={styles.input} size='md'>
                                 <InputField
-                                    placeholder="Enter name of item"
+                                    placeholder={addItem ? "Enter name of item" : ItemName}
                                     value={item}
                                     onChangeText={(text) => setItem(text)}
                                 />
@@ -173,7 +256,7 @@ const AddItemModal = ({ isVisible, onClose }: { isVisible: boolean, onClose: () 
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button style={styles.addItemsBtn} size="md" variant="solid" action="primary" onPress={saveItem}>
+                        <Button style={styles.addItemsBtn} size="md" variant="solid" action="primary" onPress={addItem ? saveItem : updateItem}>
                             <ButtonText>Done</ButtonText>
                         </Button>
                     </ModalFooter>

@@ -26,7 +26,7 @@ CREATE TABLE customers (
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     total_amount DECIMAL(10,2) NOT NULL,
-    customer_id INTEGER REFERENCES customers(id),
+    -- customer_id INTEGER REFERENCES customers(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

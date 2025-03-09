@@ -18,6 +18,8 @@ import AddItemModal from '@/components/AddItemModal'
 import SelectCurrencyModal from '@/components/SelectCurrencyModal'
 import settingsThemedStyles from '@/app/styles/settingsThemedStyles'
 import ToggleThemeModal from '@/components/ToggleThemeModal'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { router } from 'expo-router'
 
 
 
@@ -45,14 +47,25 @@ const settings = () => {
     const handleToggleTheme = ()=>setThemeModal(true)
     const closeThemeModal = ()=>setThemeModal(false)
 
+    // Transaction History navigation
+    const handleTransactionHistory = () => {
+        router.push('/screens/(Other)/transactionHistory');
+    }
 
     // Handle log out
-    const handleLogOut = () => {
+    const handleLogOut = async() => {
+        await AsyncStorage.removeItem('userToken')
+        router.replace('/screens/(Onboarding)/logIn')  
         console.log('logging out')
     }
 
     // Get settings options and pass `handleAddItem`
     const settingsOptionsList = settingsOptions(handleAddItem, handleSelectCurrency, handleToggleTheme);  
+    settingsOptionsList.push({
+        id: settingsOptionsList.length + 1,
+        name: 'Transaction History',
+        onPress: handleTransactionHistory
+    });
 
     // Function to render setting options
     const renderOption = ({ item }: { item: settingsOption }) =>
@@ -107,7 +120,7 @@ const settings = () => {
 
 
             {/* Add items modal */}
-            <AddItemModal isVisible={itemsModal} onClose={closeItemModal} />
+            <AddItemModal isVisible={itemsModal} onClose={closeItemModal} addItem={true} />
 
             {/* Select currency modal */}
             <SelectCurrencyModal isVisible={currModal} onClose={closeCurrModal}/>
