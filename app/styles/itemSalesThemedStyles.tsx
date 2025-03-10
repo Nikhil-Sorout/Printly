@@ -13,12 +13,12 @@ const itemSalesThemedStyles = () => {
         container: {
             height: height * .5,
             width: width * .95,
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             gap: height * .02,
             backgroundColor: theme.cardBackground,
             padding: height * .01,
             borderRadius: width * .02,
-            elevation: 2
+            elevation: 2,
         },
         yearSalesLabel: {
             fontSize: 18,

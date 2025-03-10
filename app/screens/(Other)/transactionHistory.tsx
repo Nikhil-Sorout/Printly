@@ -7,8 +7,8 @@ import { useApiError } from '@/app/hooks/useApiError';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/app/context/themeContext';
 import { Feather } from '@expo/vector-icons';
-
-
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { UIActivityIndicator } from 'react-native-indicators';
 
 const TransactionHistory = () => {
     const [transactions, setTransactions] = useState([]);
@@ -17,9 +17,9 @@ const TransactionHistory = () => {
     interface Transaction {
         id: string;
         created_at: string;
-        // add other properties as needed
+        // Add other properties if needed
     }
-    
+
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     interface TransactionDetail {
         name: string;
@@ -28,31 +28,40 @@ const TransactionHistory = () => {
     }
 
     const [transactionDetails, setTransactionDetails] = useState<TransactionDetail[]>([]);
-
+    const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const [isStartDatePickerVisible, setStartDatePickerVisibility] = useState(false);
+    const [isEndDatePickerVisible, setEndDatePickerVisibility] = useState(false);
     useEffect(() => {
-        const fetchTransactions = async () => {
-            try {
-                const token = await AsyncStorage.getItem('userToken');
-                const response = await axios.get(`${baseUrl}/transactions`,
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
-                if (response.status !== 200) {
-                    showError(response.status)
-                    return
-                }
-                setTransactions(response.data.data.transactions);
-            } catch (err) {
-                console.log(err);
-                showError(undefined, "Network Error Occured")
-            }
-        };
         fetchTransactions();
-    }, []);
+    }, [startDate, endDate]);
+
+    const fetchTransactions = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const response = await axios.get(`${baseUrl}/transactions`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    start_date: startDate ? startDate.toISOString() : null,
+                    end_date: endDate ? endDate.toISOString() : null
+                }
+            });
+            console.log(response)
+            if (response.status !== 200) {
+                showError(response.status);
+                return;
+            }
+            setLoading(false);
+            setTransactions(response.data.data.transactions);
+        } catch (err) {
+            console.log(err);
+            showError(undefined, "Network Error Occured");
+        }
+    };
 
     const fetchTransactionDetails = async (t_id: string) => {
         try {
@@ -75,22 +84,60 @@ const TransactionHistory = () => {
         }
     };
 
-
-    console.log(transactions)
     const renderTransaction = ({ item }: { item: { id: string; total_amount: number; created_at: string } }) => (
         <View style={[styles.transactionItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text style={[styles.transactionText, { color: theme.text, fontWeight: 'bold' }]}>Transaction ID: {item.id}</Text>
             <Text style={styles.transactionText}>Total Amount: {item.total_amount}</Text>
             <Text style={styles.transactionText}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
-            <Pressable style={{position:'absolute', right: 16, top: 16}} onPress={() => fetchTransactionDetails(item.id)}>
+            <Pressable style={{ position: 'absolute', right: 16, top: 16 }} onPress={() => fetchTransactionDetails(item.id)}>
                 <Feather name="info" size={22} color={theme.primary} />
             </Pressable>
         </View>
     );
 
+    const handleConfirmStartDate = (date: Date) => {
+        setStartDatePickerVisibility(false);
+        setStartDate(date);
+    };
+
+    const handleConfirmEndDate = (date: Date) => {
+        setEndDatePickerVisibility(false);
+        setEndDate(date);
+    };
+
+    console.log("TransactionHistory : ", transactions);
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <UIActivityIndicator color={theme.primary} size={30}/>
+            </SafeAreaView>
+        )
+    }
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Text style={[styles.header, { color: theme.primary }]}>Transaction History</Text>
+            <View style={styles.datePickerContainer}>
+                <Pressable onPress={() => setStartDatePickerVisibility(true)} style={styles.datePickerButton}>
+                    <Text style={{ color: theme.text }}>Start Date: {startDate ? startDate.toLocaleDateString() : 'Select Date'}</Text>
+                </Pressable>
+                <Pressable onPress={() => setEndDatePickerVisibility(true)} style={styles.datePickerButton}>
+                    <Text style={{ color: theme.text }}>End Date: {endDate ? endDate.toLocaleDateString() : 'Select Date'}</Text>
+                </Pressable>
+            </View>
+            <DateTimePickerModal
+                isVisible={isStartDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirmStartDate}
+                onCancel={() => setStartDatePickerVisibility(false)}
+            />
+            <DateTimePickerModal
+                isVisible={isEndDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirmEndDate}
+                onCancel={() => setEndDatePickerVisibility(false)}
+            />
             <FlatList
                 data={transactions}
                 keyExtractor={(item) => item.id.toString()}
@@ -137,9 +184,7 @@ const styles = StyleSheet.create({
     },
     transactionItem: {
         padding: 16,
-        // backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
-        // borderBottomColor: '#E5E7EB',
         marginBottom: 8,
         borderRadius: 8,
         elevation: 2
@@ -151,7 +196,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
     },
     modalContent: {
         width: '90%',
@@ -168,6 +213,16 @@ const styles = StyleSheet.create({
     },
     itemText: {
         fontSize: 16,
+    },
+    datePickerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+    },
+    datePickerButton: {
+        padding: 10,
+        borderRadius: 5,
+        backgroundColor: '#E5E7EB',
     },
 });
 

@@ -1,11 +1,7 @@
 import { Text, View, StyleSheet, Dimensions, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { Bar, CartesianChart, Pie, PolarChart, useChartPressState } from 'victory-native'
-import { itemSalesData } from '@/app/data/itemSalesData'
 import { Circle, LinearGradient, useFont, vec } from '@shopify/react-native-skia'
-import { SharedValue, useDerivedValue, useSharedValue } from 'react-native-reanimated'
-import { Text as SkiaText } from '@shopify/react-native-skia'
 import {
     Select,
     SelectTrigger,
@@ -21,12 +17,31 @@ import {
 import { ChevronDownIcon } from '@/components/ui/icon'
 import { transactionItem, transactionsData } from '@/app/data/transactionsData'
 import itemSalesThemedStyles from '@/app/styles/itemSalesThemedStyles'
+import { useApiError } from '@/app/hooks/useApiError'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import axios from 'axios'
+import { baseUrl } from '@/helper'
+import { useTheme } from '@/app/context/themeContext'
+import { useCurrency } from '@/app/context/currencyContext'
+import { UIActivityIndicator } from 'react-native-indicators'
 
+
+type categorySalesItem = {
+    category: string,
+    total_revenue: number
+}
 
 const { width, height } = Dimensions.get("window")
 
 const ItemSales = () => {
 
+
+    const { isModalVisible, errorDetails, showError, hideError } = useApiError()
+
+    const { currencySymbol } = useCurrency()
+    const { theme, isDark } = useTheme()
+
+    const [loading, setLoading] = useState(true)
 
     const styles = itemSalesThemedStyles()
 
@@ -34,8 +49,16 @@ const ItemSales = () => {
     const font = useFont(require('../assets/fonts/SpaceMono-Regular.ttf'), fontSize);
     const toolTipFont = useFont(require('../assets/fonts/SpaceMono-Regular.ttf'), fontSize + 2);
 
-    const [selectedMonth, setSelectedMonth] = useState<null | number>(1);
-    const [selectedYear, setSelectedYear] = useState(2024);
+    const [selectedMonth, setSelectedMonth] = useState<null | number>(new Date().getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [data, setData] = useState([])
+
+
+    useEffect(() => {
+        fetchData()
+    }, [selectedYear, selectedMonth])
+
+
 
     const months = [
         { label: "Jan", value: 1 },
@@ -52,28 +75,50 @@ const ItemSales = () => {
         { label: "Dec", value: 12 },
     ];
 
-    const years = Array.from({ length: 6 }, (_, i) => 2020 + i);
+    const years = Array.from({ length: 6 }, (_, i) => 2025 + i);
+
+    const fetchData = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken')
+            console.log(token)
+            const response = await axios.get(`${baseUrl}/analytics/category-sales`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    month: selectedMonth,
+                    year: selectedYear
+                }
+            })
+            setLoading(false)
+            console.log('category-sales data: ', response.data.data.category_sales)
+            setData(response.data.data.category_sales)
+            if (response.status !== 200) {
+                showError(response.status, response.data.message)
+                return
+            }
+        }
+        catch (err) {
+            console.log(err)
+            showError(undefined, 'Network Error Occured')
+        }
+    }
 
 
     // Function to group total sales by category_id
     const getCategoryData = () => {
         const categorySales: Record<string, number> = {};
 
-        transactionsData
-            .filter((item) => {
-                const date = new Date(item.date);
-                return date.getFullYear() === selectedYear && (!selectedMonth || date.getMonth() + 1 === selectedMonth);
-            })
-            .forEach((transaction) => {
-                transaction.items.forEach((item) => {
-                    categorySales[item.category_name] = (categorySales[item.category_name] || 0) + item.total_price;
-                });
+        data
+            .forEach((item: categorySalesItem) => {
+                categorySales[item.category] = item.total_revenue;
             });
 
         return Object.keys(categorySales).map((category) => ({
-            label: category, // Show category_id
+            label: category + ` (${currencySymbol} ${categorySales[category]})`, // Show category_id
             value: categorySales[category], // Total sales for that category
-            color: generateRandomColor(), // Random color
+            color: generateRandomColor(isDark), // Random color
         }));
     };
 
@@ -83,7 +128,6 @@ const ItemSales = () => {
     if (!font) {
         return null; // Font is still loading
     }
-
 
 
 
@@ -102,10 +146,11 @@ const ItemSales = () => {
 
 
     return (
-        <View style={styles.container}>
+        <>
+        { loading?(<UIActivityIndicator count = { 12} size = { 30} color = { theme.primary } />): (data.length > 0 ? <View style={styles.container}>
             <View style={styles.yearlySales}>
                 {/* Label */}
-                <Text style={styles.yearSalesLabel}>Items Sales</Text>
+                <Text style={styles.yearSalesLabel}>Top Category</Text>
 
                 <View style={styles.picker}>
                     {/* Year picker */}
@@ -132,7 +177,7 @@ const ItemSales = () => {
 
                     {/* month picker */}
                     <Select style={styles.yearPicker}
-                        defaultValue={"Jan"}
+                        defaultValue={months[new Date().getMonth()].label}
                         onValueChange={(value) => handleMonthChange(value)}>
                         <SelectTrigger style={styles.trigger} variant="outline" size="sm">
                             <SelectInput placeholder={selectedMonth?.toString()} />
@@ -172,7 +217,7 @@ const ItemSales = () => {
 
                         return (
                             <Pie.Slice>
-                                <Pie.Label font={font} color={"white"} />
+                                <Pie.Label radiusOffset={0.5} font={font} color={'white'} />
                                 <LinearGradient
                                     start={vec(startX, startY)}
                                     end={vec(endX, endY)}
@@ -184,7 +229,61 @@ const ItemSales = () => {
                     }}
                 </Pie.Chart>
             </PolarChart>
-        </View>
+        </View> :
+            <View style={styles.container}>
+                <View style={styles.yearlySales}>
+                    {/* Label */}
+                    <Text style={styles.yearSalesLabel}>Top Category</Text>
+
+                    <View style={styles.picker}>
+                        {/* Year picker */}
+
+                        <Select style={styles.yearPicker}
+                            defaultValue={selectedYear.toString()}
+                            onValueChange={(value) => handleYearChange(value)}>
+                            <SelectTrigger style={styles.trigger} variant="outline" size="sm">
+                                <SelectInput placeholder={selectedYear.toString()} />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            </SelectTrigger>
+                            <SelectPortal>
+                                <SelectBackdrop />
+                                <SelectContent>
+                                    <SelectDragIndicatorWrapper>
+                                        <SelectDragIndicator />
+                                    </SelectDragIndicatorWrapper>
+                                    {years.map((item) => (
+                                        <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
+                                    ))}
+                                </SelectContent>
+                            </SelectPortal>
+                        </Select>
+
+                        {/* month picker */}
+                        <Select style={styles.yearPicker}
+                            defaultValue={months[new Date().getMonth()].label}
+                            onValueChange={(value) => handleMonthChange(value)}>
+                            <SelectTrigger style={styles.trigger} variant="outline" size="sm">
+                                <SelectInput placeholder={selectedMonth?.toString()} />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            </SelectTrigger>
+                            <SelectPortal>
+                                <SelectBackdrop />
+                                <SelectContent>
+                                    <SelectDragIndicatorWrapper>
+                                        <SelectDragIndicator />
+                                    </SelectDragIndicatorWrapper>
+                                    {months.map((item) => (
+                                        <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
+                                    ))}
+                                </SelectContent>
+                            </SelectPortal>
+                        </Select>
+                    </View>
+                </View>
+                <Text style={{ position: 'absolute', left: '50%', top: '50%', transform: [{ translateX: '-50%' }, { translateY: '-50%' }], textAlign: 'center' }}>No sales in this period</Text>
+            </View>)
+}
+</>
     )
 }
 
@@ -214,13 +313,76 @@ function calculateGradientPoints(
 }
 
 
-function generateRandomColor(): string {
-    // Generating a random number between 0 and 0xFFFFFF
-    const randomColor = Math.floor(Math.random() * 0xffffff);
-    // Converting the number to a hexadecimal string and padding with zeros
-    return `#${randomColor.toString(16).padStart(6, "0")}`;
+// function generateRandomColor(): string {
+//     // Generating a random number between 0 and 0xFFFFFF
+//     const randomColor = Math.floor(Math.random() * 0xffffff);
+//     // Converting the number to a hexadecimal string and padding with zeros
+//     return `#${randomColor.toString(16).padStart(6, "0")}`;
+// }
+
+function generateRandomColor(
+    isDarkTheme: boolean,
+    options?: {
+        saturation?: number,    // 0-100, default 70
+        lightness?: number,     // 0-100, default 50
+        variation?: number,     // 0-30, default 15
+        hue?: number            // specific hue (0-360) or undefined for random
+    }
+): string {
+    // Default values
+    const saturation = options?.saturation ?? 70;
+    const baseLightness = options?.lightness ?? 50;
+    const variation = options?.variation ?? 15;
+
+    // Generate random hue (0-360) or use specified hue
+    const hue = options?.hue ?? Math.floor(Math.random() * 360);
+
+    // Calculate appropriate lightness range based on theme
+    let minLightness, maxLightness;
+    if (isDarkTheme) {
+        // For dark theme: brighter colors (55-85%)
+        minLightness = 55;
+        maxLightness = 85;
+    } else {
+        // For light theme: darker colors (30-60%)
+        minLightness = 30;
+        maxLightness = 60;
+    }
+
+    // Start with base lightness adjusted for theme
+    let lightness = isDarkTheme ? baseLightness + 10 : baseLightness - 5;
+
+    // Add random variation
+    lightness += (Math.random() * variation * 2) - variation;
+
+    // Ensure lightness stays within appropriate range for the theme
+    lightness = Math.max(minLightness, Math.min(maxLightness, lightness));
+
+    // Convert HSL to hex
+    return hslToHex(hue, saturation, lightness);
 }
 
+/**
+ * Converts HSL color values to hex string
+ * @param h - Hue (0-360)
+ * @param s - Saturation (0-100)
+ * @param l - Lightness (0-100)
+ * @returns Hex color string
+ */
+function hslToHex(h: number, s: number, l: number): string {
+    // Convert saturation and lightness to fractions
+    s /= 100;
+    l /= 100;
+
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
 
 
 export default ItemSales

@@ -15,7 +15,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { baseUrl } from '@/helper';
 import { useApiError } from '@/app/hooks/useApiError';
-
+import {UIActivityIndicator} from 'react-native-indicators';
+import { useTheme } from '@/app/context/themeContext';
 
 type MenuItem = {
   id: number;
@@ -48,19 +49,25 @@ interface CategoryGroup {
 
 
 const Index: React.FC = () => {
-  
+
 
   const styles = homeWithoutMenuThemedStyles();
+
+  const {theme} = useTheme();
 
   const [showModal, setShowModal] = React.useState(false)
 
   const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
+  const [loading, setLoading] = useState(true);
+
   const [menuData, setMenuData] = useState<CategoryGroup[]>([])
 
-  
+
+
   const fetchData = async () => {
     try {
+      setLoading(true);
       const token = await AsyncStorage.getItem('userToken');
       console.log(token)
       if (!token) {
@@ -76,18 +83,20 @@ const Index: React.FC = () => {
       });
 
       console.log('Menu ', response.data.data.items);
-      const items = response.data.data.items
-      setMenuData(response.data.data.items)
-      if (response.status !== 201) {
+
+      if (response.status === 200 || response.status === 201) { // Check if successful
+        console.log('Menu ', response.data.data.items);
+        setMenuData(response.data?.data?.items || []);
+        setLoading(false); // Stop loading only if successful
+      } else {
         showError(response.status);
-        return;
       }
 
     } catch (err) {
       console.log('Caught the error ', err);
       showError(undefined, 'Network Error Occurred');
-      return []
     }
+
   };
 
 
@@ -99,28 +108,35 @@ const Index: React.FC = () => {
   // Will show the modal
   const handleAddItem = () => {
     setShowModal(true)
-    console.log(showModal)
   }
 
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
+
   return (
     <SafeAreaView style={styles.mainContainer}>
       <Header />
-      {menuData.length > 0 ? <Home menuData={menuData} fetchData={fetchData} /> : (
+
+      {/* Show Loading Indicator */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <UIActivityIndicator count={12} size={30} color={theme.primary} />
+        </View>
+      ) : menuData.length > 0 ? (
+        <Home menuData={menuData} fetchData={fetchData} />
+      ) : (
         <View style={styles.container}>
           <Text style={styles.addItemsTxt}>No items available right now!</Text>
-          {/* Add items button */}
           <Button style={styles.addItemsBtn} size="md" variant="solid" action="primary" onPress={handleAddItem}>
             <ButtonText>Add Item</ButtonText>
             <ButtonIcon as={AddIcon} />
           </Button>
 
-          {/* Add items modal */}
-          <AddItemModal isVisible={showModal} onClose={handleCloseModal} fetchData={fetchData} addItem={true}/>
-        </View>)}
+          <AddItemModal isVisible={showModal} onClose={handleCloseModal} fetchData={fetchData} addItem={true} />
+        </View>
+      )}
     </SafeAreaView>
   )
 };

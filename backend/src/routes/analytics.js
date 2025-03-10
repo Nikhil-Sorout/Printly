@@ -6,43 +6,43 @@ import { exportToCSV } from '../utils/csvExporter.js';
 const router = express.Router();
 
 // Get daily sales summary
-router.get('/daily', authenticateToken, async (req, res, next) => {
-  try {
-    const { start_date, end_date } = req.query;
-    const params = [];
-    let dateFilter = '';
+// router.get('/daily', authenticateToken, async (req, res, next) => {
+//   try {
+//     const { start_date, end_date } = req.query;
+//     const params = [];
+//     let dateFilter = '';
 
-    if (start_date && end_date) {
-      dateFilter = 'WHERE DATE(created_at) BETWEEN $1 AND $2';
-      params.push(start_date, end_date);
-    }
+//     if (start_date && end_date) {
+//       dateFilter = 'WHERE DATE(created_at) BETWEEN $1 AND $2';
+//       params.push(start_date, end_date);
+//     }
 
-    const result = await query(
-      `SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as total_transactions,
-        SUM(total_amount) as total_sales,
-        ROUND(AVG(total_amount), 2) as average_sale
-       FROM transactions
-       ${dateFilter}
-       GROUP BY DATE(created_at)
-       ORDER BY date DESC`,
-      params
-    );
+//     const result = await query(
+//       `SELECT 
+//         DATE(created_at) as date,
+//         COUNT(*) as total_transactions,
+//         SUM(total_amount) as total_sales,
+//         ROUND(AVG(total_amount), 2) as average_sale
+//        FROM transactions
+//        ${dateFilter}
+//        GROUP BY DATE(created_at)
+//        ORDER BY date DESC`,
+//       params
+//     );
 
-    res.json({
-      status: 'success',
-      data: { daily_sales: result.rows }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+//     res.json({
+//       status: 'success',
+//       data: { daily_sales: result.rows }
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // Get best-selling items
 router.get('/best-sellers', authenticateToken, async (req, res, next) => {
   try {
-    const { limit = 10, period = '30' } = req.query;
+    const { limit = 4, year, month } = req.query;
 
     const result = await query(
       `SELECT 
@@ -54,14 +54,14 @@ router.get('/best-sellers', authenticateToken, async (req, res, next) => {
        FROM transaction_items ti
        JOIN items i ON ti.item_id = i.id
        JOIN transactions t ON ti.transaction_id = t.id
-       WHERE t.created_at >= NOW() - INTERVAL '${period} days'
+       WHERE EXTRACT(YEAR FROM t.created_at) = $2 AND EXTRACT(MONTH FROM t.created_at) = $3
        GROUP BY i.id, i.name, i.category
        ORDER BY total_quantity DESC
        LIMIT $1`,
-      [limit]
+      [limit, year, month]
     );
 
-    res.json({
+    res.status(200).json({
       status: 'success',
       data: { best_sellers: result.rows }
     });
@@ -73,13 +73,13 @@ router.get('/best-sellers', authenticateToken, async (req, res, next) => {
 // Get category-wise sales breakdown
 router.get('/category-sales', authenticateToken, async (req, res, next) => {
   try {
-    const { start_date, end_date } = req.query;
+    const { month, year } = req.query;
     const params = [];
     let dateFilter = '';
 
-    if (start_date && end_date) {
-      dateFilter = 'WHERE t.created_at BETWEEN $1 AND $2';
-      params.push(start_date, end_date);
+    if (month && year) {
+      dateFilter = 'WHERE EXTRACT(MONTH FROM t.created_at) = $1 AND EXTRACT(YEAR FROM t.created_at) = $2';
+      params.push(month, year);
     }
 
     const result = await query(
@@ -98,7 +98,7 @@ router.get('/category-sales', authenticateToken, async (req, res, next) => {
       params
     );
 
-    res.json({
+    res.status(200).json({
       status: 'success',
       data: { category_sales: result.rows }
     });
@@ -138,35 +138,35 @@ router.get('/revenue-trends', authenticateToken, async (req, res, next) => {
 });
 
 // Get stock alerts (items running low)
-router.get('/stock-alerts', authenticateToken, async (req, res, next) => {
-  try {
-    const { threshold = 10 } = req.query;
+// router.get('/stock-alerts', authenticateToken, async (req, res, next) => {
+//   try {
+//     const { threshold = 10 } = req.query;
 
-    const result = await query(
-      `SELECT 
-        id,
-        name,
-        category,
-        stock,
-        CASE 
-          WHEN stock = 0 THEN 'out_of_stock'
-          WHEN stock <= $1 THEN 'low_stock'
-          ELSE 'sufficient'
-        END as stock_status
-       FROM items
-       WHERE stock <= $1
-       ORDER BY stock ASC`,
-      [threshold]
-    );
+//     const result = await query(
+//       `SELECT 
+//         id,
+//         name,
+//         category,
+//         stock,
+//         CASE 
+//           WHEN stock = 0 THEN 'out_of_stock'
+//           WHEN stock <= $1 THEN 'low_stock'
+//           ELSE 'sufficient'
+//         END as stock_status
+//        FROM items
+//        WHERE stock <= $1
+//        ORDER BY stock ASC`,
+//       [threshold]
+//     );
 
-    res.json({
-      status: 'success',
-      data: { stock_alerts: result.rows }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+//     res.json({
+//       status: 'success',
+//       data: { stock_alerts: result.rows }
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // Export sales data
 router.get('/export/sales', authenticateToken, async (req, res, next) => {
@@ -207,27 +207,59 @@ router.get('/export/sales', authenticateToken, async (req, res, next) => {
   }
 });
 
-// Export inventory status
-router.get('/export/inventory', authenticateToken, async (req, res, next) => {
+// // Export inventory status
+// router.get('/export/inventory', authenticateToken, async (req, res, next) => {
+//   try {
+//     const result = await query(
+//       `SELECT 
+//         id,
+//         name,
+//         category,
+//         price,
+//         stock,
+//         created_at,
+//         updated_at
+//        FROM items
+//        ORDER BY category, name`
+//     );
+
+//     const filename = `inventory_report_${new Date().toISOString().split('T')[0]}.csv`;
+//     exportToCSV(res, result.rows, filename);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+
+// Get monthly sales summary for a selected year
+router.get('/monthly', authenticateToken, async (req, res, next) => {
   try {
+    const { year } = req.query;
+    const params = [];
+    let dateFilter = '';
+
+    if (year) {
+      dateFilter = 'WHERE EXTRACT(YEAR FROM created_at) = $1';
+      params.push(year);
+    }
+
     const result = await query(
       `SELECT 
-        id,
-        name,
-        category,
-        price,
-        stock,
-        created_at,
-        updated_at
-       FROM items
-       ORDER BY category, name`
+        DATE_TRUNC('month', created_at) as month,
+        SUM(total_amount) as total_sales
+       FROM transactions
+       ${dateFilter}
+       GROUP BY month
+       ORDER BY month ASC`,
+      params
     );
 
-    const filename = `inventory_report_${new Date().toISOString().split('T')[0]}.csv`;
-    exportToCSV(res, result.rows, filename);
+    res.json({
+      status: 'success',
+      data: { monthly_sales: result.rows }
+    });
   } catch (error) {
     next(error);
   }
 });
 
-export default router; 
+export default router;

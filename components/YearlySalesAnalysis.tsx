@@ -21,20 +21,99 @@ import {
 import { ChevronDownIcon } from '@/components/ui/icon'
 import { useCurrency } from '@/app/context/currencyContext'
 import yearlySalesAnalysisThemedStyles from '@/app/styles/yearlySalesAnalysisThemedStyles'
-
-
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import axios from 'axios'
+import { baseUrl } from '@/helper'
+import { useApiError } from '@/app/hooks/useApiError'
+import { UIActivityIndicator } from 'react-native-indicators'
+import { useTheme } from '@/app/context/themeContext'
 
 const YearlySalesAnalysis = () => {
 
+    const {theme} = useTheme()
+
+    const { currency, currencySymbol } = useCurrency()
+
+    const [loading, setLoading] = useState(true)
+
     const styles = yearlySalesAnalysisThemedStyles();
+
+    const { showError, hideError, errorDetails, isModalVisible } = useApiError()
 
     const fontSize = 10;
     const font = useFont(require('../assets/fonts/SpaceMono-Regular.ttf'), fontSize);
     const toolTipFont = useFont(require('../assets/fonts/SpaceMono-Regular.ttf'), fontSize + 2);
 
-    const [selectedYear, setSelectedYear] = useState(2024);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [yearlyData, setYearlyData] = useState([])
 
-    const years = Array.from({ length: 6 }, (_, i) => 2020 + i);
+    const fetchData = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken')
+            const response = await axios.get(`${baseUrl}/analytics/monthly`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    params: {
+                        year: selectedYear
+                    }
+                }
+            )
+            console.log("yearly Data: ", response.data.data.monthly_sales)
+            if (response.status !== 200) {
+                showError(response.status, response.data.message)
+                return
+            }
+            setLoading(false)
+            setYearlyData(response.data.data.monthly_sales)
+        }
+        catch (err) {
+            console.log("caught you ", err)
+            showError(undefined, 'Network Error Occured')
+        }
+    }
+    const monthlyData = transformToMonthlyData(yearlyData)
+
+    useEffect(() => {
+        fetchData()
+    }, [selectedYear])
+
+    function transformToMonthlyData(apiData: { month: string, total_sales: string }[]) {
+        // Create an object to map months to sales amounts
+        const salesByMonth: { [key: number]: number } = {};
+
+        // Get current year
+        const currentYear = new Date().getFullYear();
+
+        // Process API data
+        apiData.forEach(item => {
+            // Parse the date from the API
+            const date = new Date(item.month);
+
+            // Get month number (1-12)
+            const monthNum = date.getMonth() + 1;
+
+            // Store the sales amount for this month
+            salesByMonth[monthNum] = parseFloat(item.total_sales);
+        });
+
+        // Create the full 12-month array with zero values for missing months
+        const monthlyData = Array.from({ length: 12 }, (_, i) => {
+            const month = i + 1;
+            return {
+                month,
+                sales: salesByMonth[month] || 0,
+                // Optional: You can also include month names if needed
+                monthName: new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' })
+            };
+        });
+
+        return monthlyData;
+    }
+
+    const years = Array.from({ length: 6 }, (_, i) => 2022 + i);
 
     // Maintain the chart press state to make it interactive
     const { state, isActive } = useChartPressState({ x: 0, y: { sales: 0 } });
@@ -53,30 +132,13 @@ const YearlySalesAnalysis = () => {
     }, [state, toolTipFont])
 
 
-    
-
-    // Filter sales data based on the selected year
-    const filteredData: Record<number, number> = transactionsData
-        .filter((item) => new Date(item.date).getFullYear() === selectedYear)
-        .reduce((acc, curr) => {
-            const month = new Date(curr.date).getMonth() + 1; // Months are 0-indexed
-            acc[month] = (acc[month] || 0) + curr.total_amount;
-            return acc;
-        }, {} as Record<number, number>);
-
-    // Format data for the chart
-    const monthlyData = Array.from({ length: 12 }, (_, i) => ({
-        month: i + 1,
-        sales: filteredData[i + 1] || 0, // Fill missing months with zero sales
-    }));
-
     const maxSales = Math.max(...monthlyData.map((data) => data.sales), 100);
 
     if (!font) {
         return null; // Font is still loading
     }
-   
-    
+
+    console.log("monthly data: ", monthlyData)
 
     const handleYearChange = (value: string) => {
         const year = parseInt(value, 10); // Convert to number
@@ -87,11 +149,12 @@ const YearlySalesAnalysis = () => {
 
 
 
+
     return (
         <View style={styles.container}>
             <View style={styles.yearlySales}>
                 {/* Label */}
-                <Text style={styles.yearSalesLabel}>Yearly Sales</Text>
+                <Text style={styles.yearSalesLabel}>Monthly Sales in {currency}</Text>
 
                 {/* Year picker */}
                 <Select style={styles.yearPicker}
@@ -116,55 +179,62 @@ const YearlySalesAnalysis = () => {
 
             </View>
 
-            {/* Bar Chart */}
-            <CartesianChart
-                data={monthlyData}
-                xKey={'month'}
-                yKeys={["sales"]}
-                chartPressState={state}
-                padding={5}
-                domain={{ y: [0, maxSales + 100] }}
-                domainPadding={{ left: 20, right: 20, top: 0 }}
-                axisOptions={{
-                    font,
-                    tickCount: 12,
-                    labelColor: 'black',
-                    lineColor: 'transparent',
-                    formatXLabel: (value: any) => {
-                        const date = new Date(2023, value - 1);
-                        return date.toLocaleString("default", { month: "short" });
-                    },
-                }}>
-                {({ points, chartBounds }) => (
-                    <>
-                        <Bar
-                            points={points.sales}
-                            chartBounds={chartBounds}
-                            animate={{ type: 'timing', duration: 1000 }}
-                            color="#9893DA"
-                            roundedCorners={{ topLeft: 5, topRight: 5 }}
-                            innerPadding={0.2}
-                            barCount={12}
-                        >
-                            <LinearGradient
-                                start={vec(0, 0)} end={vec(0, 400)} colors={["#a78bfa", "#a78bfa50"]} />
-                        </Bar>
-                        {isActive ? (
+            {loading ? (
+                <UIActivityIndicator size={30} color={theme.primary} />
+            ) : (
+                <>
+                    {/* Bar Chart */}
+                    < CartesianChart
+                        data={monthlyData}
+                        xKey={'month'}
+                        yKeys={["sales"]}
+                        chartPressState={state}
+                        padding={5}
+                        domain={{ y: [0, maxSales + 100] }}
+                        domainPadding={{ left: 20, right: 20, top: 0 }}
+                        axisOptions={{
+                            font,
+                            tickCount: 12,
+                            labelColor: 'black',
+                            lineColor: 'transparent',
+                            formatXLabel: (value: any) => {
+                                const date = new Date(2023, value - 1);
+                                return date.toLocaleString("default", { month: "short" });
+                            },
+                        }}>
+                        {({ points, chartBounds }) => (
                             <>
-                                <SkiaText
-                                    font={toolTipFont}
-                                    color={'black'}
-                                    x={textXPosition}
-                                    y={textYPostion}
-                                    text={value}
-                                />
-                                <Circle cx={state.x.position} cy={state.y.sales.position} r={5} color={'grey'} opacity={.8} />
+                                <Bar
+                                    points={points.sales}
+                                    chartBounds={chartBounds}
+                                    animate={{ type: 'timing', duration: 1000 }}
+                                    color="#9893DA"
+                                    roundedCorners={{ topLeft: 5, topRight: 5 }}
+                                    innerPadding={0.2}
+                                    barCount={12}
+                                >
+                                    <LinearGradient
+                                        start={vec(0, 0)} end={vec(0, 400)} colors={["#a78bfa", "#a78bfa50"]} />
+                                </Bar>
+                                {isActive ? (
+                                    <>
+                                        <SkiaText
+                                            font={toolTipFont}
+                                            color={'black'}
+                                            x={textXPosition}
+                                            y={textYPostion}
+                                            text={value}
+                                        />
+                                        <Circle cx={state.x.position} cy={state.y.sales.position} r={5} color={'grey'} opacity={.8} />
+                                    </>
+                                ) : null}
                             </>
-                        ) : null}
-                    </>
-                )}
-            </CartesianChart>
-        </View>
+                        )}
+                    </CartesianChart>
+                </>
+            )
+            }
+        </View >
     )
 }
 

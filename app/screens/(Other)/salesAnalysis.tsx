@@ -33,6 +33,7 @@ import analyseSalesThemedStyles from '@/app/styles/analyseSalesThemedStyles'
 const { width, height } = Dimensions.get("window")
 
 const salesAnalysis = () => {
+    
 
     const styles = analyseSalesThemedStyles()
 
@@ -50,18 +51,5 @@ const salesAnalysis = () => {
     )
 }
 
-const styles = StyleSheet.create({
-    // container: {
-    //     flex: 1,
-    //     justifyContent: 'flex-start',
-    //     alignItems: 'center',
-    //     padding: height * .01,
-    //     gap: height * .02,
-    //     backgroundColor: '#FEFEFF',
-    // },
-    // scrollView: {
-    //     gap: height * .02
-    // },
-})
 
 export default salesAnalysis

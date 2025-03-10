@@ -146,15 +146,18 @@ router.get('/', authenticateToken, async (req, res, next) => {
     let whereClause = '';
     const params = [];
     let paramCount = 1;
-
+    console.log(start_date)
+    console.log(end_date)
     if (start_date) {
-      whereClause += `${whereClause ? ' AND ' : 'WHERE '} created_at >= $${paramCount++}`;
-      params.push(new Date(start_date));
+      whereClause += `${whereClause ? ' AND ' : 'WHERE '} created_at >= $${paramCount++}::timestamp`;
+      // params.push(new Date(start_date));
+      params.push(new Date(start_date).toISOString());
     }
 
     if (end_date) {
-      whereClause += `${whereClause ? ' AND ' : 'WHERE '} created_at <= $${paramCount++}`;
-      params.push(new Date(end_date));
+      whereClause += `${whereClause ? ' AND ' : 'WHERE '} created_at <= $${paramCount++}::timestamp`;
+      // params.push(new Date(end_date));
+      params.push(new Date(end_date).toISOString());
     }
 
     // if (customer_id) {
