@@ -1,50 +1,50 @@
-# Welcome to your Expo app 👋
+# 🖨️ Printly  
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+### A Smart Receipt & Sales Tracking App  
 
-## Get started
+Printly is a digital solution designed to help shopkeepers efficiently manage their sales, track transactions, and generate receipts in a seamless way.  
 
-1. Install dependencies
+## 🚀 Features  
 
-   ```bash
-   npm install
-   ```
+- 📜 **Virtual Menu & Item Selection** – Simplifies billing by allowing quick item selection.  
+- 📊 **Sales Tracking & Analytics** – Gain insights into sales trends and performance.  
+- 🔄 **Multi-User Support** – Ensures data isolation for different users.  
+- 📑 **Receipt Generation** – Generates clear and structured receipts for customers.  
+- 📁 **Transaction History** – Keeps records of past transactions for easy reference.  
 
-2. Start the app
+## 🎯 Tech Stack  
 
-   ```bash
-    npx expo start
-   ```
+- **Frontend:** React Native (Expo)  
+- **Backend:** Node.js & Express  
+- **Database:** PostgreSQL  
+- **State Management:** Context API / Redux  
+- **Libraries & Tools:** Victory Native XL for charts, TypeScript for type safety  
 
-In the output, you'll find options to open the app in a
+## 📚 Learnings & Challenges  
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+While building Printly, I gained hands-on experience in:  
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+✅ **Multi-User Data Isolation** – Ensuring each user’s data remains private and secure.  
+✅ **Scalability Considerations** – Structuring the backend to handle multiple transactions efficiently.  
+✅ **Optimized Database Design** – Using PostgreSQL to store and retrieve transactional data efficiently.  
+✅ **Data Visualization** – Implementing sales insights using **Victory Native XL** for charts.  
+✅ **API Performance Optimization** – Improving request handling and response times.  
+✅ **Type Safety with TypeScript** – Enhancing code reliability and maintainability.  
+✅ **Mobile UI/UX Considerations** – Designing an intuitive experience for shopkeepers.  
 
-## Get a fresh project
+## 📌 Future Enhancements  
 
-When you're ready, run:
+- 🏦 **Payment Integration** (UPI, Credit/Debit cards)  
+- ☁️ **Cloud Backup & Syncing**  
+- 🛒 **Inventory Management System**  
 
-```bash
-npm run reset-project
-```
+## 🤝 Contributing  
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Contributions, issues, and feature requests are welcome! Feel free to fork this repository and submit a pull request.  
 
-## Learn more
+## 📫 Contact  
 
-To learn more about developing your project with Expo, look at the following resources:
+If you have any questions or suggestions, feel free to reach out:  
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+📧 Email: nikhilsorout6@gmail.com
+🔗 LinkedIn: https://www.linkedin.com/in/nikhilsorout/
