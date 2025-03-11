@@ -8,6 +8,7 @@ export type ThemeType = {
   shadow: string;
   buttonText: string;
   neutralText: string;
+  transactionHistory: string; // Add this line
   // Gluestack specific colors
   $light: {
     primary: string;
@@ -40,6 +41,7 @@ export const lightTheme: ThemeType = {
   shadow: "#64748B20",
   buttonText: "#FFFFFF",
   neutralText: "#475569",
+  transactionHistory: "#2DD4BF", // Add this line
   
   // Gluestack specific tokens
   $light: {
@@ -73,6 +75,7 @@ export const darkTheme: ThemeType = {
   shadow: "#00000040",
   buttonText: "#FFFFFF",
   neutralText: "#CBD5E1",
+  transactionHistory: "#2DD4BF", // Add this line
   
   // Gluestack specific tokens
   $light: {

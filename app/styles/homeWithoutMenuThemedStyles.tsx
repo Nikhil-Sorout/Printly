@@ -35,7 +35,7 @@ const homeWithoutMenuThemedStyles = () => {
       color: theme.neutralText
     },
     addItemsBtn: {
-      backgroundColor: theme.buttonBackground
+      backgroundColor: theme.$light.secondary
     },
     modalBody: {
       alignItems: 'center',

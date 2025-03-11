@@ -1,5 +1,5 @@
 import express from 'express';
-import { query } from '../db/index.js';
+import { query, queryWithSchema } from '../db/index.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { itemSchema } from '../validators/schemas.js';
 
@@ -8,7 +8,10 @@ const router = express.Router();
 // Get all items with pagination
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
-    const result = await query(
+    console.log(req.query)
+    const shopId = req.query.shopId;
+    console.log('shopId: ', shopId)
+    const result = await queryWithSchema(shopId,
       'SELECT * FROM items ORDER BY category'
     );
 
@@ -26,9 +29,11 @@ router.get('/', authenticateToken, async (req, res, next) => {
 // Create new item
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
+    console.log(req.query)
+    const shopId = req.query.shopId;
     const item = await itemSchema.validateAsync(req.body);
     
-    const result = await query(
+    const result = await queryWithSchema(shopId,
       'INSERT INTO items (name, price, category) VALUES ($1, $2, $3) RETURNING *',
       [item.name, item.price, item.category]
     );
@@ -47,10 +52,12 @@ router.post('/', authenticateToken, async (req, res, next) => {
 // Update item
 router.put('/:name/:category', authenticateToken, async (req, res, next) => {
   try {
-    const { name, category } = req.params;
+    const { name, category} = req.params;
+    const shopId = req.query.shopId;
+    console.log(shopId)
     const item = await itemSchema.validateAsync(req.body);
     console.log(item)
-    const result = await query(
+    const result = await queryWithSchema(shopId,
       'UPDATE items SET name = $1, price = $2, category = $3, updated_at = CURRENT_TIMESTAMP WHERE name = $4 AND category  = $5 RETURNING *',
       [item.name, item.price, item.category, name, category]
     );
@@ -77,9 +84,10 @@ router.put('/:name/:category', authenticateToken, async (req, res, next) => {
 router.delete('/delete/:name/:price', authenticateToken, async (req, res, next) => {
   try {
     const { name, price } = req.params;
-    console.log(name, price)
+    const shopId = req.query.shopId;
+    console.log(name, price, shopId)
     // Fetch the item ID using name and price
-    const findItem = await query(
+    const findItem = await queryWithSchema(shopId,
       'SELECT id FROM items WHERE name = $1 AND price = $2',
       [name, price]
     );
@@ -94,7 +102,7 @@ router.delete('/delete/:name/:price', authenticateToken, async (req, res, next) 
     const itemId = findItem.rows[0].id;
     console.log(itemId)
     // Proceed with deletion
-    const result = await query(
+    const result = await queryWithSchema(shopId,
       'DELETE FROM items WHERE id = $1 RETURNING *',
       [itemId]
     );

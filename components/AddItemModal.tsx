@@ -8,15 +8,16 @@ import { Input, InputField } from '@/components/ui/input';
 import { useCurrency } from '@/app/context/currencyContext';
 import axios from 'axios';
 import { baseUrl } from '@/helper';
-import { ErrorModal } from '@/app/components/ErrorModal';
+import { ErrorModal } from './ErrorModal';
 import { useApiError } from '@/app/hooks/useApiError';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/app/context/themeContext';
 
 const { width, height } = Dimensions.get('window')
 
 const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCategory }: { isVisible: boolean, onClose: () => void, fetchData?: () => void, addItem: boolean, ItemName?: string, ItemCategory?: string }) => {
 
-
+    const { theme } = useTheme()
 
     const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
@@ -72,11 +73,14 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
 
 
         const token = await AsyncStorage.getItem('userToken');
+        const shopId = await AsyncStorage.getItem('shop_id')
         const api = axios.create({
             baseURL: baseUrl,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
+            }, params: {
+                shopId: shopId
             }
         })
         if (!isPriceInvalid) {
@@ -87,7 +91,8 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
                         name: ItemName,
                         category: ItemCategory,
                         price: price
-                    }
+                    },
+
                 )
                 fetchData?.()
                 if (response.status !== 200) {
@@ -116,11 +121,15 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
 
 
         const token = await AsyncStorage.getItem('userToken');
+        const shopId = await AsyncStorage.getItem('shop_id')
         const api = axios.create({
             baseURL: baseUrl,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
+            },
+            params: {
+                shopId: shopId
             }
         })
 
@@ -164,11 +173,11 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
         <>
             {/* Add items modal */}
             <Modal isOpen={isVisible} onClose={onClose}>
-                <ModalContent>
+                <ModalContent style={{ backgroundColor: theme.background }}>
                     <ModalHeader>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#9893DA' }}>{addItem ? 'Add Item' : 'Update Item'}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{addItem ? 'Add Item' : 'Update Item'}</Text>
                         <ModalCloseButton>
-                            <Icon as={CloseIcon} size="md" />
+                            <Icon as={CloseIcon} size="md" color={theme.text} />
                         </ModalCloseButton>
                     </ModalHeader>
                     <ModalBody contentContainerStyle={styles.modalBody}>
@@ -183,13 +192,15 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
                             isRequired={false}
                         >
                             <FormControlLabel>
-                                <FormControlLabelText style={styles.label}>Category</FormControlLabelText>
+                                <FormControlLabelText style={[styles.label, { color: theme.text }]}>Category</FormControlLabelText>
                             </FormControlLabel>
-                            <Input style={styles.input} size='md'>
+                            <Input style={[{ borderColor: theme.border }]} size='md'>
                                 <InputField
                                     placeholder={addItem ? "Enter category of item" : ItemCategory}
                                     value={category}
+                                    placeholderTextColor={theme.neutralText}
                                     onChangeText={(text) => setCategory(text)}
+                                    style={{ color: theme.neutralText }}
                                 />
                             </Input>
                             <FormControlError>
@@ -210,13 +221,15 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
                             isRequired={false}
                         >
                             <FormControlLabel>
-                                <FormControlLabelText style={styles.label}>Name</FormControlLabelText>
+                                <FormControlLabelText style={[styles.label, { color: theme.text }]}>Name</FormControlLabelText>
                             </FormControlLabel>
-                            <Input style={styles.input} size='md'>
+                            <Input style={[{ borderColor: theme.border }]} size='md'>
                                 <InputField
                                     placeholder={addItem ? "Enter name of item" : ItemName}
                                     value={item}
                                     onChangeText={(text) => setItem(text)}
+                                    placeholderTextColor={theme.neutralText}
+                                    style={{ color: theme.neutralText }}
                                 />
                             </Input>
                             <FormControlError>
@@ -237,14 +250,16 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
                             isRequired={false}
                         >
                             <FormControlLabel>
-                                <FormControlLabelText style={styles.label}>Price ({currency})</FormControlLabelText>
+                                <FormControlLabelText style={[styles.label, { color: theme.text }]}>Price ({currency})</FormControlLabelText>
                             </FormControlLabel>
-                            <Input style={styles.input} size='md'>
+                            <Input style={[{ borderColor: theme.border }]} size='md'>
                                 <InputField
                                     keyboardType='numeric'
                                     placeholder="Enter price of item"
                                     value={price}
                                     onChangeText={(text) => setPrice(text)}
+                                    placeholderTextColor={theme.neutralText}
+                                    style={{ color: theme.neutralText }}
                                 />
                             </Input>
                             <FormControlError>
@@ -256,8 +271,8 @@ const AddItemModal = ({ isVisible, onClose, fetchData, addItem, ItemName, ItemCa
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button style={styles.addItemsBtn} size="md" variant="solid" action="primary" onPress={addItem ? saveItem : updateItem}>
-                            <ButtonText>Done</ButtonText>
+                        <Button style={[{ backgroundColor: theme.buttonBackground }]} size="md" variant="solid" action="primary" onPress={addItem ? saveItem : updateItem}>
+                            <ButtonText style={{ color: theme.buttonText }}>Done</ButtonText>
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -283,15 +298,8 @@ const styles = StyleSheet.create({
         width: width * .5
     },
     label: {
-        color: "#9893DA",
         fontWeight: 'bold'
-    },
-    input: {
-        borderColor: '#9893DA'
-    },
-    addItemsBtn: {
-        backgroundColor: '#9893DA'
-    },
+    }
 })
 
 

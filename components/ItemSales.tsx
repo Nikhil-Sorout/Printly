@@ -15,7 +15,6 @@ import {
     SelectItem,
 } from "@/components/ui/select"
 import { ChevronDownIcon } from '@/components/ui/icon'
-import { transactionItem, transactionsData } from '@/app/data/transactionsData'
 import itemSalesThemedStyles from '@/app/styles/itemSalesThemedStyles'
 import { useApiError } from '@/app/hooks/useApiError'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -38,7 +37,7 @@ const ItemSales = () => {
 
     const { isModalVisible, errorDetails, showError, hideError } = useApiError()
 
-    const { currencySymbol } = useCurrency()
+    const { currencySymbol, convertAmount } = useCurrency()
     const { theme, isDark } = useTheme()
 
     const [loading, setLoading] = useState(true)
@@ -81,6 +80,7 @@ const ItemSales = () => {
         try {
             const token = await AsyncStorage.getItem('userToken')
             console.log(token)
+            const shopId = await AsyncStorage.getItem('shop_id')
             const response = await axios.get(`${baseUrl}/analytics/category-sales`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -88,7 +88,8 @@ const ItemSales = () => {
                 },
                 params: {
                     month: selectedMonth,
-                    year: selectedYear
+                    year: selectedYear,
+                    shopId: shopId
                 }
             })
             setLoading(false)
@@ -116,8 +117,8 @@ const ItemSales = () => {
             });
 
         return Object.keys(categorySales).map((category) => ({
-            label: category + ` (${currencySymbol} ${categorySales[category]})`, // Show category_id
-            value: categorySales[category], // Total sales for that category
+            label: category + ` (${currencySymbol} ${convertAmount(categorySales[category]).toFixed(2)})`, // Show category_id
+            value: convertAmount(categorySales[category]), // Total sales for that category
             color: generateRandomColor(isDark), // Random color
         }));
     };
@@ -147,90 +148,7 @@ const ItemSales = () => {
 
     return (
         <>
-        { loading?(<UIActivityIndicator count = { 12} size = { 30} color = { theme.primary } />): (data.length > 0 ? <View style={styles.container}>
-            <View style={styles.yearlySales}>
-                {/* Label */}
-                <Text style={styles.yearSalesLabel}>Top Category</Text>
-
-                <View style={styles.picker}>
-                    {/* Year picker */}
-
-                    <Select style={styles.yearPicker}
-                        defaultValue={selectedYear.toString()}
-                        onValueChange={(value) => handleYearChange(value)}>
-                        <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                            <SelectInput placeholder={selectedYear.toString()} />
-                            <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                        </SelectTrigger>
-                        <SelectPortal>
-                            <SelectBackdrop />
-                            <SelectContent>
-                                <SelectDragIndicatorWrapper>
-                                    <SelectDragIndicator />
-                                </SelectDragIndicatorWrapper>
-                                {years.map((item) => (
-                                    <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
-                                ))}
-                            </SelectContent>
-                        </SelectPortal>
-                    </Select>
-
-                    {/* month picker */}
-                    <Select style={styles.yearPicker}
-                        defaultValue={months[new Date().getMonth()].label}
-                        onValueChange={(value) => handleMonthChange(value)}>
-                        <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                            <SelectInput placeholder={selectedMonth?.toString()} />
-                            <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                        </SelectTrigger>
-                        <SelectPortal>
-                            <SelectBackdrop />
-                            <SelectContent>
-                                <SelectDragIndicatorWrapper>
-                                    <SelectDragIndicator />
-                                </SelectDragIndicatorWrapper>
-                                {months.map((item) => (
-                                    <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
-                                ))}
-                            </SelectContent>
-                        </SelectPortal>
-                    </Select>
-                </View>
-            </View>
-            <PolarChart
-                containerStyle={styles.chart}
-                data={filteredData} // 👈 specify your data
-                labelKey={"label"} // 👈 specify data key for labels
-                valueKey={"value"} // 👈 specify data key for values
-                colorKey={"color"} // 👈 specify data key for color
-            >
-                <Pie.Chart>
-                    {({ slice }) => {
-                        // ☝️ render function of each slice object for each pie slice with props described below
-                        const { startX, startY, endX, endY } = calculateGradientPoints(
-                            slice.radius,
-                            slice.startAngle,
-                            slice.endAngle,
-                            slice.center.x,
-                            slice.center.y
-                        );
-
-                        return (
-                            <Pie.Slice>
-                                <Pie.Label radiusOffset={0.5} font={font} color={'white'} />
-                                <LinearGradient
-                                    start={vec(startX, startY)}
-                                    end={vec(endX, endY)}
-                                    colors={[slice.color, `${slice.color}50`]}
-                                    positions={[0, 1]}
-                                />
-                            </Pie.Slice>
-                        );
-                    }}
-                </Pie.Chart>
-            </PolarChart>
-        </View> :
-            <View style={styles.container}>
+            {loading ? (<UIActivityIndicator count={12} size={30} color={theme.primary} />) : (data.length > 0 ? <View style={styles.container}>
                 <View style={styles.yearlySales}>
                     {/* Label */}
                     <Text style={styles.yearSalesLabel}>Top Category</Text>
@@ -241,15 +159,15 @@ const ItemSales = () => {
                         <Select style={styles.yearPicker}
                             defaultValue={selectedYear.toString()}
                             onValueChange={(value) => handleYearChange(value)}>
-                            <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                                <SelectInput placeholder={selectedYear.toString()} />
-                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                <SelectInput style={{ color: theme.text }} placeholder={selectedYear.toString()} />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                             </SelectTrigger>
                             <SelectPortal>
                                 <SelectBackdrop />
-                                <SelectContent>
+                                <SelectContent style={{ backgroundColor: theme.background }}>
                                     <SelectDragIndicatorWrapper>
-                                        <SelectDragIndicator />
+                                        <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
                                     </SelectDragIndicatorWrapper>
                                     {years.map((item) => (
                                         <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
@@ -262,15 +180,15 @@ const ItemSales = () => {
                         <Select style={styles.yearPicker}
                             defaultValue={months[new Date().getMonth()].label}
                             onValueChange={(value) => handleMonthChange(value)}>
-                            <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                                <SelectInput placeholder={selectedMonth?.toString()} />
-                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                <SelectInput style={{ color: theme.text }} placeholder={selectedMonth?.toString()} />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                             </SelectTrigger>
                             <SelectPortal>
                                 <SelectBackdrop />
-                                <SelectContent>
+                                <SelectContent style={{ backgroundColor: theme.background }}>
                                     <SelectDragIndicatorWrapper>
-                                        <SelectDragIndicator />
+                                        <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
                                     </SelectDragIndicatorWrapper>
                                     {months.map((item) => (
                                         <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
@@ -280,10 +198,93 @@ const ItemSales = () => {
                         </Select>
                     </View>
                 </View>
-                <Text style={{ position: 'absolute', left: '50%', top: '50%', transform: [{ translateX: '-50%' }, { translateY: '-50%' }], textAlign: 'center' }}>No sales in this period</Text>
-            </View>)
-}
-</>
+                <PolarChart
+                    containerStyle={styles.chart}
+                    data={filteredData} // 👈 specify your data
+                    labelKey={"label"} // 👈 specify data key for labels
+                    valueKey={"value"} // 👈 specify data key for values
+                    colorKey={"color"} // 👈 specify data key for color
+                >
+                    <Pie.Chart>
+                        {({ slice }) => {
+                            // ☝️ render function of each slice object for each pie slice with props described below
+                            const { startX, startY, endX, endY } = calculateGradientPoints(
+                                slice.radius,
+                                slice.startAngle,
+                                slice.endAngle,
+                                slice.center.x,
+                                slice.center.y
+                            );
+
+                            return (
+                                <Pie.Slice>
+                                    <Pie.Label radiusOffset={0.5} font={font} color={theme.neutralText} />
+                                    <LinearGradient
+                                        start={vec(startX, startY)}
+                                        end={vec(endX, endY)}
+                                        colors={[slice.color, `${slice.color}50`]}
+                                        positions={[0, 1]}
+                                    />
+                                </Pie.Slice>
+                            );
+                        }}
+                    </Pie.Chart>
+                </PolarChart>
+            </View> :
+                <View style={styles.container}>
+                    <View style={styles.yearlySales}>
+                        {/* Label */}
+                        <Text style={styles.yearSalesLabel}>Top Category</Text>
+
+                        <View style={styles.picker}>
+                            {/* Year picker */}
+
+                            <Select style={styles.yearPicker}
+                                defaultValue={selectedYear.toString()}
+                                onValueChange={(value) => handleYearChange(value)}>
+                                <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                    <SelectInput style={{ color: theme.text }} placeholder={selectedYear.toString()} />
+                                    <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
+                                </SelectTrigger>
+                                <SelectPortal>
+                                    <SelectBackdrop />
+                                    <SelectContent style={{ backgroundColor: theme.background }}>
+                                        <SelectDragIndicatorWrapper>
+                                            <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
+                                        </SelectDragIndicatorWrapper>
+                                        {years.map((item) => (
+                                            <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
+                                        ))}
+                                    </SelectContent>
+                                </SelectPortal>
+                            </Select>
+
+                            {/* month picker */}
+                            <Select style={styles.yearPicker}
+                                defaultValue={months[new Date().getMonth()].label}
+                                onValueChange={(value) => handleMonthChange(value)}>
+                                <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                    <SelectInput style={{ color: theme.text }} placeholder={selectedMonth?.toString()} />
+                                    <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
+                                </SelectTrigger>
+                                <SelectPortal>
+                                    <SelectBackdrop />
+                                    <SelectContent style={{ backgroundColor: theme.background }}>
+                                        <SelectDragIndicatorWrapper>
+                                            <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
+                                        </SelectDragIndicatorWrapper>
+                                        {months.map((item) => (
+                                            <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
+                                        ))}
+                                    </SelectContent>
+                                </SelectPortal>
+                            </Select>
+                        </View>
+                    </View>
+                    <Text style={{ position: 'absolute', left: '50%', top: '50%', transform: [{ translateX: '-50%' }, { translateY: '-50%' }], textAlign: 'center', color:theme.neutralText }}>No sales in this period</Text>
+                </View>)
+            }
+        </>
     )
 }
 

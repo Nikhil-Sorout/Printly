@@ -32,7 +32,8 @@ const yearlySalesAnalysisThemedStyles = () => {
             width: width * .2,
         },
         trigger: {
-            height: height * .05
+            height: height * .05,
+            borderColor: theme.border,
         }
     })
 }

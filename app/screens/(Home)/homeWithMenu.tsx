@@ -11,7 +11,8 @@ import axios from 'axios';
 import { baseUrl } from '@/helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApiError } from '@/app/hooks/useApiError';
-
+import { useTheme } from '@/app/context/themeContext';
+import { ErrorModal } from '@/components/ErrorModal';
 
 interface ProcessedMenuItem {
     id: number;
@@ -74,29 +75,30 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
     }, []);
 
     console.log(menuData)
+
     const { isModalVisible, errorDetails, showError, hideError } = useApiError();
 
-    function convertToTransactionFormat(foodItems:any) {
+    function convertToTransactionFormat(foodItems: any) {
         // Initialize an array to store the formatted items
         const items = [];
-        
+
         // Iterate through each food item in the object
         for (const itemName in foodItems) {
-          const item = foodItems[itemName];
-          
-          // Create a new object with the required structure
-          items.push({
-            item_id: item.id,
-            quantity: item.quantity
-          });
+            const item = foodItems[itemName];
+
+            // Create a new object with the required structure
+            items.push({
+                item_id: item.id,
+                quantity: item.quantity
+            });
         }
-        
+
         // Return the formatted data
         return {
-          items: items
+            items: items
         };
-      }
-      
+    }
+
 
 
 
@@ -132,26 +134,27 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
 
     const styles = homeThemedStyles()
     const { currency, currencySymbol, convertAmount } = useCurrency();
-    
-    
+
+    const { theme } = useTheme()
+
     const dispatch = useDispatch();
     const cart = useSelector((state: { cart: CartState }) => state.cart);
-    
+
     const [selectedItem, setSelectedItem] = useState<Item | null>(null)
-    
+
     const [editItemModal, setEditItemModal] = useState(false)
-    
+
     const [updateItemModal, setUpdateItemModal] = useState(false)
-    
+
     const [deleteItemModal, setDeleteItemModal] = useState(false)
-    
-    
+
+
     const [modalVisible, setModalVisible] = useState(false);
     const [cartModalVisible, setCartModalVisible] = useState(false);
-    
+
     const flatListRef = useRef<FlatList<any> | null>(null);
-    
-    
+
+
     const handleDiscardCart = () => {
         dispatch(cartSlice.actions.clearCart());
         setCartModalVisible(false);
@@ -163,6 +166,7 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
             const modifiedData = convertToTransactionFormat(cart.items)
             console.log(modifiedData)
             const token = await AsyncStorage.getItem('userToken')
+            const shopId = await AsyncStorage.getItem('shop_id')
             const response = await axios.post(`${baseUrl}/transactions`,
                 {
                     items: modifiedData.items
@@ -172,9 +176,12 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
+                    params: {
+                        shopId: shopId
+                    },
                 })
             console.log(response)
-            if(response.status !== 201){
+            if (response.status !== 201) {
                 showError(response.status)
                 return
             }
@@ -182,7 +189,7 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
             setCartModalVisible(false)
 
         }
-        catch(err){
+        catch (err) {
             console.log("caught you ", err)
             showError(undefined, 'Network Error Occured')
         }
@@ -197,12 +204,16 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
         setEditItemModal(false)
         try {
             const token = await AsyncStorage.getItem('userToken')
+            const shopId = await AsyncStorage.getItem('shop_id')
             console.log(selectedItem?.name, selectedItem?.price)
             const response = await axios.delete(`${baseUrl}/items/delete/${selectedItem?.name}/${selectedItem?.price}`,
                 {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
+                    },
+                    params: {
+                        shopId: shopId
                     }
                 })
             console.log(response)
@@ -230,7 +241,7 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
         <View style={styles.cartItem}>
             <Text style={styles.cartItemText}>{item.name}</Text>
             <Text style={styles.cartItemText}>x{item.quantity}</Text>
-            <Text style={styles.cartItemText}>{currencySymbol} {Number(convertAmount(item.price)) * item.quantity}</Text>
+            <Text style={styles.cartItemText}>{currencySymbol} {(Number(Number(convertAmount(item.price)).toFixed(2)) * item.quantity).toFixed(2)}</Text>
         </View>
     );
 
@@ -263,7 +274,8 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
         }
 
         // If no matches found
-        alert('No matching category or dish found');
+        showError(undefined, "Item not found")
+
     };
 
 
@@ -290,7 +302,7 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
                     <Entypo name='dots-three-vertical' color={'#2DD4BF'} size={14} />
                 </Pressable>
                 <Text style={styles.itemsText}>{item.name}</Text>
-                <Text style={styles.itemsText}>{currencySymbol} {convertAmount(item.price)}</Text>
+                <Text style={styles.itemsText}>{currencySymbol} {Number(convertAmount(item.price)).toFixed(2)}</Text>
                 <View style={styles.actionButtons}>
                     {itemQuantity > 0 ? (
                         <View style={styles.quantityContainer}>
@@ -344,7 +356,9 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
             <TextInput
                 style={styles.searchBar}
                 placeholder="Search for items or categories"
+                placeholderTextColor={theme.neutralText}
                 onSubmitEditing={(e) => handleScrollToCategory(e.nativeEvent.text)}
+
             />
             <FlatList
                 ref={flatListRef}
@@ -362,12 +376,12 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
                 style={styles.floatingButton}
                 onPress={() => setModalVisible(true)}
             >
-                <Text style={{ color: '#9893DA' }}>Menu</Text>
+                <Text style={{ color: theme.text }}>Menu</Text>
             </TouchableOpacity>
 
             {/* Cart Summary Button */}
             <TouchableOpacity style={styles.cartButton} onPress={() => setCartModalVisible(true)}>
-                <Text style={{ color: '#9893DA' }}>Cart: {cart.itemCount} items ({currencySymbol}{cart.total})</Text>
+                <Text style={{ color: theme.text }}>Cart: {cart.itemCount} items ({currencySymbol}{cart.total})</Text>
             </TouchableOpacity>
 
             {/* Modal for Categories */}
@@ -453,7 +467,13 @@ const home = ({ menuData, fetchData }: { menuData: CategoryGroup[], fetchData: (
             <EditItemModal visible={editItemModal} onClose={() => setEditItemModal(false)} onUpdatePrice={handleUpdateItem} onDelete={handleDeleteItem} deleteModalVisible={deleteItemModal} updateModalVisible={updateItemModal} selectedItem={selectedItem} setDeleteModalVisible={setDeleteItemModal} setUpdatedModalVisible={setUpdateItemModal} fetchData={fetchData} />
 
 
-
+            {/* Error Modal */}
+            <ErrorModal
+                isVisible={isModalVisible}
+                statusCode={errorDetails.statusCode}
+                message={errorDetails.message}
+                onClose={hideError}
+            />
 
         </View>
     )

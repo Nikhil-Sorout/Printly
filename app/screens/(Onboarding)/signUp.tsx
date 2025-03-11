@@ -9,11 +9,14 @@ import { AlertCircleIcon } from "@/components/ui/icon"
 import authScreenThemedStyles from '@/app/styles/authScreenThemedStyles'
 import axios from 'axios'
 import { baseUrl } from '@/helper'
+import { useTheme } from '@/app/context/themeContext'
 
 // Dimensions of screen
 const { width, height } = Dimensions.get('window')
 
 const signUp = () => {
+
+  const {theme} = useTheme()
 
   // Input parameters
   const [userName, setUserName] = useState('')
@@ -40,8 +43,8 @@ const signUp = () => {
           email: email,
           password: password
         });
-        console.log(response);
         router.replace('/screens/(Onboarding)/logIn');
+        console.log(response);
       } catch (error) {
         console.error(error);
       }
@@ -75,6 +78,7 @@ const signUp = () => {
             placeholder="Username"
             value={userName}
             onChangeText={(text) => setUserName(text)}
+            style={{color: theme.neutralText}}
           />
         </Input>
         <FormControlError>
@@ -102,6 +106,7 @@ const signUp = () => {
             placeholder="Email"
             value={email}
             onChangeText={(text) => setEmail(text)}
+            style={{color: theme.neutralText}}
           />
         </Input>
         <FormControlHelper>
@@ -135,6 +140,7 @@ const signUp = () => {
             placeholder="Password"
             value={password}
             onChangeText={(text) => setPassword(text)}
+            style={{color: theme.neutralText}}
           />
         </Input>
         <FormControlHelper>
@@ -158,50 +164,5 @@ const signUp = () => {
     </SafeAreaView>
   )
 }
-
-// StyleSheet
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#F6F6FF',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     gap: height * .02,
-//     padding: width * .05
-//   },
-//   img: {
-//     width: width * .4,
-//     height: height * .2,
-//     borderRadius: (width * .2) / 2,
-//   },
-//   appName: {
-//     fontSize: 22,
-//     fontFamily: 'serif',
-//     color: '#9893DA',
-//     fontWeight: 'bold'
-//   },
-//   formControl:{
-//     width: width*.9
-//   },
-//   label:{
-//     color: "#9893DA",
-//     fontWeight: 'bold'
-//   },
-//   input: {
-//     borderColor: '#9893DA'
-//   },
-//   signInBtn:{
-//     backgroundColor: '#9893DA',
-//   },
-//   footerTxt:{
-//     fontSize: 15,
-//     color: 'grey',
-//     top: 15
-//   },
-//   loginTxt:{
-//     fontWeight: 'bold',
-//     color: '#9893DA'
-// //   }
-// })
 
 export default signUp

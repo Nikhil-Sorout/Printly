@@ -20,13 +20,14 @@ import settingsThemedStyles from '@/app/styles/settingsThemedStyles'
 import ToggleThemeModal from '@/components/ToggleThemeModal'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
+import { useTheme } from '@/app/context/themeContext'
 
 
 
 const settings = () => {
 
     const styles = settingsThemedStyles()
-
+    const {theme} = useTheme()
     // Log out alert
     const [showAlertDialog, setShowAlertDialog] = React.useState(false)
     const handleClose = () => setShowAlertDialog(false)
@@ -89,14 +90,14 @@ const settings = () => {
                 renderItem={renderOption}
             />
             {/* Logout button */}
-            <Button onPress={() => setShowAlertDialog(true)} style={{ backgroundColor: '#9893DA' }}>
-                <ButtonText>Log Out</ButtonText>
+            <Button onPress={() => setShowAlertDialog(true)} style={{ backgroundColor: theme.buttonBackground }}>
+                <ButtonText style={{color: theme.buttonText}}>Log Out</ButtonText>
             </Button>
             <AlertDialog isOpen={showAlertDialog} onClose={handleClose} size="md">
                 <AlertDialogBackdrop />
-                <AlertDialogContent>
+                <AlertDialogContent style={{backgroundColor: theme.background}}>
                     <AlertDialogHeader>
-                        <Heading className="text-typography-950 font-semibold" size="md">
+                        <Heading className="text-typography-950 font-semibold" size="md" style={{color: theme.neutralText}}>
                             Are you sure you want to log out?
                         </Heading>
                     </AlertDialogHeader>
@@ -108,11 +109,12 @@ const settings = () => {
                             action="secondary"
                             onPress={handleClose}
                             size="sm"
+                            style={{backgroundColor: theme.$light.primary}}
                         >
-                            <ButtonText style={{ color: '#9893DA' }}>No</ButtonText>
+                            <ButtonText style={{ color: theme.buttonText }}>No</ButtonText>
                         </Button>
-                        <Button style={{ backgroundColor: '#9893DA' }} size="sm" onPress={handleLogOut}>
-                            <ButtonText>Yes</ButtonText>
+                        <Button style={{ backgroundColor: theme.$light.error }} size="sm" onPress={handleLogOut}>
+                            <ButtonText style={{color: theme.buttonText}}>Yes</ButtonText>
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>

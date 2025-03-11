@@ -2,7 +2,6 @@ import { Text, View, StyleSheet, Dimensions, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Bar, CartesianChart, Pie, PolarChart, useChartPressState } from 'victory-native'
-import { itemSalesData } from '@/app/data/itemSalesData'
 import { Circle, LinearGradient, useFont, vec } from '@shopify/react-native-skia'
 import { SharedValue, useDerivedValue, useSharedValue } from 'react-native-reanimated'
 import { Text as SkiaText } from '@shopify/react-native-skia'
@@ -19,7 +18,6 @@ import {
     SelectItem,
 } from "@/components/ui/select"
 import { ChevronDownIcon } from '@/components/ui/icon'
-import { transactionItem, transactionsData } from '@/app/data/transactionsData'
 import itemSalesThemedStyles from '@/app/styles/itemSalesThemedStyles'
 import { useTheme } from '@/app/context/themeContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -44,7 +42,7 @@ const TopSellingItems = () => {
 
     const [loading, setLoading] = useState(true)
 
-    const { currency, currencySymbol } = useCurrency()
+    const { currency, currencySymbol, convertAmount } = useCurrency()
 
     const styles = itemSalesThemedStyles()
 
@@ -70,7 +68,7 @@ const TopSellingItems = () => {
         { label: "Dec", value: 12 },
     ];
 
-    const years = Array.from({ length: 6 }, (_, i) => 2022 + i);
+    const years = Array.from({ length: 6 }, (_, i) => 2025 + i);
 
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState<null | number>(new Date().getMonth() + 1);
@@ -81,6 +79,7 @@ const TopSellingItems = () => {
     const fetchData = async () => {
         try {
             const token = await AsyncStorage.getItem('userToken')
+            const shopId = await AsyncStorage.getItem('shop_id')
             const response = await axios.get(`${baseUrl}/analytics/best-sellers`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -88,7 +87,8 @@ const TopSellingItems = () => {
                 },
                 params: {
                     month: selectedMonth,
-                    year: selectedYear
+                    year: selectedYear,
+                    shopId: shopId
                 }
             })
             console.log("Top Selling Items: ", response.data.data.best_sellers)
@@ -121,7 +121,7 @@ const TopSellingItems = () => {
 
         // Convert to array and sort by total sales (descending order)
         const sortedItems = Object.entries(itemSales)
-            .map(([name, totalSales]) => ({ label: name + `(${currencySymbol + itemSales[name]})`, value: totalSales, color: generateRandomColor(isDark) }))
+            .map(([name, totalSales]) => ({ label: name + `(${currencySymbol + convertAmount(itemSales[name]).toFixed(2)})`, value: convertAmount(totalSales), color: generateRandomColor(isDark) }))
 
         return sortedItems;
     };
@@ -153,23 +153,23 @@ const TopSellingItems = () => {
             ) : (data.length > 0 ? <View style={styles.container}>
                 <View style={styles.yearlySales}>
                     {/* Label */}
-                    <Text style={styles.yearSalesLabel}>Top Items</Text>
+                    <Text style={[styles.yearSalesLabel, { color: theme.neutralText }]}>Top Items</Text>
 
                     <View style={styles.picker}>
                         {/* Year picker */}
 
                         <Select style={styles.yearPicker}
-                            defaultValue={new Date().getFullYear().toString()}
+                            defaultValue={selectedYear.toString()}
                             onValueChange={(value) => handleYearChange(value)}>
-                            <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                                <SelectInput placeholder={selectedYear.toString()} />
-                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                <SelectInput style={{ color: theme.text }} placeholder={selectedYear.toString()} />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                             </SelectTrigger>
                             <SelectPortal>
                                 <SelectBackdrop />
-                                <SelectContent>
+                                <SelectContent style={{ backgroundColor: theme.background }}>
                                     <SelectDragIndicatorWrapper>
-                                        <SelectDragIndicator />
+                                        <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
                                     </SelectDragIndicatorWrapper>
                                     {years.map((item) => (
                                         <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
@@ -182,15 +182,15 @@ const TopSellingItems = () => {
                         <Select style={styles.yearPicker}
                             defaultValue={months[new Date().getMonth()].label}
                             onValueChange={(value) => handleMonthChange(value)}>
-                            <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                                <SelectInput placeholder={selectedMonth?.toString()} />
-                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                <SelectInput style={{ color: theme.text }} placeholder={selectedMonth?.toString()} />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                             </SelectTrigger>
                             <SelectPortal>
                                 <SelectBackdrop />
-                                <SelectContent>
+                                <SelectContent style={{ backgroundColor: theme.background }}>
                                     <SelectDragIndicatorWrapper>
-                                        <SelectDragIndicator />
+                                        <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
                                     </SelectDragIndicatorWrapper>
                                     {months.map((item) => (
                                         <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
@@ -222,7 +222,7 @@ const TopSellingItems = () => {
 
                             return (
                                 <Pie.Slice>
-                                    <Pie.Label font={font} color={"white"} />
+                                    <Pie.Label font={font} color={theme.neutralText} />
                                     <LinearGradient
                                         start={vec(startX, startY)}
                                         end={vec(endX, endY)}
@@ -244,17 +244,17 @@ const TopSellingItems = () => {
                             {/* Year picker */}
 
                             <Select style={styles.yearPicker}
-                                defaultValue={new Date().getFullYear().toString()}
+                                defaultValue={selectedYear.toString()}
                                 onValueChange={(value) => handleYearChange(value)}>
-                                <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                                    <SelectInput placeholder={selectedYear.toString()} />
-                                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                                <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                    <SelectInput style={{ color: theme.text }} placeholder={selectedYear.toString()} />
+                                    <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                                 </SelectTrigger>
                                 <SelectPortal>
                                     <SelectBackdrop />
-                                    <SelectContent>
+                                    <SelectContent style={{ backgroundColor: theme.background }}>
                                         <SelectDragIndicatorWrapper>
-                                            <SelectDragIndicator />
+                                            <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
                                         </SelectDragIndicatorWrapper>
                                         {years.map((item) => (
                                             <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
@@ -267,15 +267,15 @@ const TopSellingItems = () => {
                             <Select style={styles.yearPicker}
                                 defaultValue={months[new Date().getMonth()].label}
                                 onValueChange={(value) => handleMonthChange(value)}>
-                                <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                                    <SelectInput placeholder={selectedMonth?.toString()} />
-                                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                                <SelectTrigger style={[styles.trigger, { borderColor: theme.border }]} variant="outline" size="sm">
+                                    <SelectInput style={{ color: theme.text }} placeholder={selectedMonth?.toString()} />
+                                    <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                                 </SelectTrigger>
                                 <SelectPortal>
                                     <SelectBackdrop />
-                                    <SelectContent>
+                                    <SelectContent style={{ backgroundColor: theme.background }}>
                                         <SelectDragIndicatorWrapper>
-                                            <SelectDragIndicator />
+                                            <SelectDragIndicator style={{ backgroundColor: theme.neutralText }} />
                                         </SelectDragIndicatorWrapper>
                                         {months.map((item) => (
                                             <SelectItem key={item.value.toString()} label={`${item.label}`} value={item.value?.toString()} />
@@ -285,7 +285,7 @@ const TopSellingItems = () => {
                             </Select>
                         </View>
                     </View>
-                    <Text style={{ position: 'absolute', left: '50%', top: '50%', transform: [{ translateX: '-50%' }, { translateY: '-50%' }], textAlign: 'center' }}>No sales in this period</Text>
+                    <Text style={{ position: 'absolute', left: '50%', top: '50%', transform: [{ translateX: '-50%' }, { translateY: '-50%' }], textAlign: 'center', color:theme.neutralText }}>No sales in this period</Text>
                 </ View >
             )
             }

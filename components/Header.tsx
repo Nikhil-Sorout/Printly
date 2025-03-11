@@ -4,11 +4,14 @@ import { Avatar } from './ui/avatar'
 import { Icon } from './ui/icon'
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
+import { useTheme } from '@/app/context/themeContext'
 
 
 const { width, height } = Dimensions.get('window')
 
 const Header = () => {
+
+    const {theme} = useTheme()
 
     // Handle press on user icon
     const handlePress = ()=>{
@@ -17,9 +20,9 @@ const Header = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.appName}>Printly</Text>
+            <Text style={[styles.appName, {color: theme.primary}]}>Printly</Text>
             <Pressable onPress={handlePress}>
-                <Avatar size='md' style={{ backgroundColor: '#9893DA' }}>
+                <Avatar size='md' style={{ backgroundColor: theme.primary }}>
                     <Feather name='user' size={18} color={'white'} />
                 </Avatar>
             </Pressable>
@@ -36,7 +39,6 @@ const styles = StyleSheet.create({
     appName: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#9893DA',
         fontFamily: 'serif'
     }
 })

@@ -27,37 +27,4 @@ const index = () => {
     return <Redirect href="/screens/(Onboarding)/logIn" />
 }
 
-// // StyleSheet
-// const styles = StyleSheet.create({
-//     container: {
-//         flex: 1,
-//         backgroundColor: '#F6F6FF',
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//         gap: height * .05,
-//         padding: width * .05
-//     },
-//     welcomeText: {
-//         color: "#9893DA",
-//         fontWeight: 'bold',
-//         textAlign: 'center',
-//         fontSize: 15
-//     },
-//     img: {
-//         height: height * .4,
-//         width: width * .7,
-//         borderRadius: (width * .5) / 5,
-//     },
-//     button: {
-//         backgroundColor: "#9893DA",
-//         padding: (width * .03),
-//         borderRadius: (width * .05) / 4
-//     },
-//     buttonText: {
-//         color: '#FFFFFF',
-//         fontFamily: 'serif',
-//         fontSize: 15
-//     }
-// })
-
 export default index

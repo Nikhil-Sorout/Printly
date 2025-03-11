@@ -2,7 +2,6 @@ import { Text, View, StyleSheet, Dimensions, FlatList } from 'react-native'
 import React, { useEffect, useMemo, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Bar, CartesianChart, useChartPressState } from 'victory-native'
-import { transactionItem, transactionsData } from '@/app/data/transactionsData'
 import { Circle, LinearGradient, useFont, vec } from '@shopify/react-native-skia'
 import { SharedValue, useDerivedValue, useSharedValue } from 'react-native-reanimated'
 import { Text as SkiaText } from '@shopify/react-native-skia'
@@ -32,7 +31,7 @@ const YearlySalesAnalysis = () => {
 
     const {theme} = useTheme()
 
-    const { currency, currencySymbol } = useCurrency()
+    const { currency, currencySymbol, convertAmount } = useCurrency()
 
     const [loading, setLoading] = useState(true)
 
@@ -50,6 +49,7 @@ const YearlySalesAnalysis = () => {
     const fetchData = async () => {
         try {
             const token = await AsyncStorage.getItem('userToken')
+            const shopId = await AsyncStorage.getItem('shop_id')
             const response = await axios.get(`${baseUrl}/analytics/monthly`,
                 {
                     headers: {
@@ -57,7 +57,8 @@ const YearlySalesAnalysis = () => {
                         'Authorization': `Bearer ${token}`
                     },
                     params: {
-                        year: selectedYear
+                        year: selectedYear,
+                        shopId:shopId
                     }
                 }
             )
@@ -96,7 +97,7 @@ const YearlySalesAnalysis = () => {
             const monthNum = date.getMonth() + 1;
 
             // Store the sales amount for this month
-            salesByMonth[monthNum] = parseFloat(item.total_sales);
+            salesByMonth[monthNum] = Number(item.total_sales);
         });
 
         // Create the full 12-month array with zero values for missing months
@@ -104,7 +105,7 @@ const YearlySalesAnalysis = () => {
             const month = i + 1;
             return {
                 month,
-                sales: salesByMonth[month] || 0,
+                sales: Number(convertAmount(salesByMonth[month] || 0).toFixed(2)),
                 // Optional: You can also include month names if needed
                 monthName: new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' })
             };
@@ -113,13 +114,13 @@ const YearlySalesAnalysis = () => {
         return monthlyData;
     }
 
-    const years = Array.from({ length: 6 }, (_, i) => 2022 + i);
+    const years = Array.from({ length: 6 }, (_, i) => 2025 + i);
 
     // Maintain the chart press state to make it interactive
     const { state, isActive } = useChartPressState({ x: 0, y: { sales: 0 } });
 
     const value = useDerivedValue(() => {
-        return (state.y.sales.value.value.toString());
+        return (currencySymbol + state.y.sales.value.value.toString());
     })
 
     const textYPostion = useDerivedValue(() => {
@@ -132,7 +133,7 @@ const YearlySalesAnalysis = () => {
     }, [state, toolTipFont])
 
 
-    const maxSales = Math.max(...monthlyData.map((data) => data.sales), 100);
+    const maxSales = Math.max(...monthlyData.map((data) => data.sales), 0);
 
     if (!font) {
         return null; // Font is still loading
@@ -160,15 +161,15 @@ const YearlySalesAnalysis = () => {
                 <Select style={styles.yearPicker}
                     defaultValue={selectedYear.toString()}
                     onValueChange={(value) => handleYearChange(value)}>
-                    <SelectTrigger style={styles.trigger} variant="outline" size="sm">
-                        <SelectInput placeholder={selectedYear.toString()} />
-                        <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                    <SelectTrigger style={[styles.trigger,{borderColor:theme.border}]} variant="outline" size="sm">
+                        <SelectInput style={{color: theme.text}} placeholder={selectedYear.toString()} />
+                        <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                     </SelectTrigger>
                     <SelectPortal>
                         <SelectBackdrop />
-                        <SelectContent>
+                        <SelectContent style={{backgroundColor: theme.background}}>
                             <SelectDragIndicatorWrapper>
-                                <SelectDragIndicator />
+                                <SelectDragIndicator style={{backgroundColor: theme.neutralText}}/>
                             </SelectDragIndicatorWrapper>
                             {years.map((item) => (
                                 <SelectItem key={item.toString()} label={`${item}`} value={item.toString()} />
@@ -190,12 +191,12 @@ const YearlySalesAnalysis = () => {
                         yKeys={["sales"]}
                         chartPressState={state}
                         padding={5}
-                        domain={{ y: [0, maxSales + 100] }}
+                        domain={{ y: [0, maxSales + convertAmount(100)] }}
                         domainPadding={{ left: 20, right: 20, top: 0 }}
                         axisOptions={{
                             font,
                             tickCount: 12,
-                            labelColor: 'black',
+                            labelColor: theme.text,
                             lineColor: 'transparent',
                             formatXLabel: (value: any) => {
                                 const date = new Date(2023, value - 1);
@@ -208,19 +209,19 @@ const YearlySalesAnalysis = () => {
                                     points={points.sales}
                                     chartBounds={chartBounds}
                                     animate={{ type: 'timing', duration: 1000 }}
-                                    color="#9893DA"
+                                    color={theme.primary}
                                     roundedCorners={{ topLeft: 5, topRight: 5 }}
                                     innerPadding={0.2}
                                     barCount={12}
                                 >
                                     <LinearGradient
-                                        start={vec(0, 0)} end={vec(0, 400)} colors={["#a78bfa", "#a78bfa50"]} />
+                                        start={vec(0, 0)} end={vec(0, 400)} colors={[theme.primary, theme.primary]} />
                                 </Bar>
                                 {isActive ? (
                                     <>
                                         <SkiaText
                                             font={toolTipFont}
-                                            color={'black'}
+                                            color={theme.text}
                                             x={textXPosition}
                                             y={textYPostion}
                                             text={value}

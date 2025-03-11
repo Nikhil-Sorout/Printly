@@ -25,6 +25,7 @@ import { Heading } from './ui/heading';
 import { ChevronDownIcon, CloseIcon, Icon } from './ui/icon';
 import { Button, ButtonText } from './ui/button';
 import { useCurrency } from '@/app/context/currencyContext';
+import { useTheme } from '@/app/context/themeContext';
 
 
 const { width, height } = Dimensions.get('window')
@@ -33,6 +34,8 @@ const SelectCurrencyModal = ({ isVisible, onClose }: { isVisible: boolean, onClo
 
     // Using currency context
     const { currency, setCurrency } = useCurrency();
+
+    const {theme} = useTheme()
 
     const currRef = useRef(currency);
 
@@ -52,23 +55,23 @@ const SelectCurrencyModal = ({ isVisible, onClose }: { isVisible: boolean, onClo
             size="md"
         >
             <ModalBackdrop />
-            <ModalContent style={styles.modalContent}>
+            <ModalContent style={[styles.modalContent, {backgroundColor: theme.background}]}>
                 <ModalHeader>
-                    <Heading size="md" className="text-typography-950">
+                    <Heading size="md" className="text-typography-950" style={{ color: theme.text }}>
                         Choose currency
                     </Heading>
                 </ModalHeader>
                 <ModalBody>
-                    <Select style={styles.select} selectedValue={currency} onValueChange={handleCurrencyChange} >
-                        <SelectTrigger style={styles.trigger} variant="outline" size="md">
-                            <SelectInput placeholder="Select currency" value={currency} />
-                            <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                    <Select style={[styles.select]} selectedValue={currency} onValueChange={handleCurrencyChange} >
+                        <SelectTrigger style={[styles.trigger,{borderColor: theme.border}]} variant="outline" size="md">
+                            <SelectInput style={{color:theme.neutralText}} placeholder="Select currency" value={currency} />
+                            <SelectIcon className="mr-3" as={ChevronDownIcon} color={theme.text} />
                         </SelectTrigger>
                         <SelectPortal>
                             <SelectBackdrop />
-                            <SelectContent>
+                            <SelectContent style={{backgroundColor: theme.background}}>
                                 <SelectDragIndicatorWrapper>
-                                    <SelectDragIndicator />
+                                    <SelectDragIndicator style={{backgroundColor: theme.neutralText}} />
                                 </SelectDragIndicatorWrapper>
                                 <SelectItem label="INR (₹)" value="INR" />
                                 <SelectItem label="USD ($)" value="USD" />
@@ -79,17 +82,18 @@ const SelectCurrencyModal = ({ isVisible, onClose }: { isVisible: boolean, onClo
                 </ModalBody>
                 <ModalFooter>
                     <Button
-                        variant="outline"
+                        // variant="outline"
                         action="secondary"
                         onPress={onCancel}
+                        style={{backgroundColor: theme.$light.warning}}
                     >
-                        <ButtonText>Cancel</ButtonText>
+                        <ButtonText style={{color:theme.buttonText}}>Cancel</ButtonText>
                     </Button>
                     <Button
-                        style={{ backgroundColor: '#9893DA' }}
+                        style={{ backgroundColor: theme.$light.secondary }}
                         onPress={onClose}
                     >
-                        <ButtonText style={{ color: 'white' }}>Done</ButtonText>
+                        <ButtonText style={{ color: theme.buttonText }}>Done</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>
@@ -106,7 +110,7 @@ const styles = StyleSheet.create({
     },
     trigger: {
         height: height * .05,
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
     },
 })
 

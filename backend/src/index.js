@@ -27,6 +27,24 @@ app.use('/api/analytics', analyticsRoutes);
 // Error handling
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-}); 
+async function checkDatabaseReady() {
+  let retries = 5;
+  while (retries) {
+    try {
+      await pool.query("SELECT 1"); // Test if the database is accessible
+      console.log("Database is ready!");
+      break;
+    } catch (err) {
+      console.error(" Database not ready, retrying in 2 seconds...");
+      retries--;
+      await new Promise(res => setTimeout(res, 2000)); // Wait before retrying
+    }
+  }
+}
+
+checkDatabaseReady().then(() => {
+
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+})

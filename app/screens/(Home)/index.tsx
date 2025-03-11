@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Dimensions, Pressable } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Home from './homeWithMenu';
 import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
@@ -45,7 +45,7 @@ interface CategoryGroup {
 
 
 
-
+const {width, height} = Dimensions.get('window')
 
 
 const Index: React.FC = () => {
@@ -64,21 +64,36 @@ const Index: React.FC = () => {
   const [menuData, setMenuData] = useState<CategoryGroup[]>([])
 
 
+  const [refreshing, setRefreshing] = useState(false);
+  
+      const onRefresh = useCallback(() => {
+          setRefreshing(true);
+          fetchData?.(); // Fetch updated data
+          setTimeout(() => {
+              setRefreshing(false);
+          }, 1000);
+      }, []);
+
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('userToken');
+      const shopId = await AsyncStorage.getItem('shop_id');
       console.log(token)
       if (!token) {
         console.log("No token found");
         return;
       }
+      console.log('shop id: ', shopId)
 
       const response = await axios.get(`${baseUrl}/items/`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+        },
+        params: {
+          shopId: shopId
         }
       });
 
@@ -135,6 +150,9 @@ const Index: React.FC = () => {
           </Button>
 
           <AddItemModal isVisible={showModal} onClose={handleCloseModal} fetchData={fetchData} addItem={true} />
+          <Pressable onPress={onRefresh} style={{backgroundColor: theme.buttonBackground, padding: 8, borderRadius: 6, position: 'absolute', bottom: height*.01}}>
+            <Text style={{color: theme.buttonText}}>Refresh</Text>
+          </Pressable>
         </View>
       )}
     </SafeAreaView>

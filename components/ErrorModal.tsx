@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
-import { useTheme } from '../context/themeContext';
+import { useTheme } from '@/app/context/themeContext';
 
 type ErrorModalProps = {
     isVisible: boolean;

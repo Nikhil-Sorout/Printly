@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Dimensions, Image } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Input, InputField } from '@/components/ui/input'
 import { Button, ButtonText } from '@/components/ui/button'
@@ -10,8 +10,9 @@ import authScreenThemedStyles from '@/app/styles/authScreenThemedStyles'
 import axios from 'axios'
 import { baseUrl } from '@/helper'
 import { useApiError } from '../../hooks/useApiError'
-import { ErrorModal } from '../../components/ErrorModal'
+import { ErrorModal } from '@/components/ErrorModal'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTheme } from '@/app/context/themeContext'
 
 // Dimensions of screen
 const { width, height } = Dimensions.get('window')
@@ -19,9 +20,13 @@ const { width, height } = Dimensions.get('window')
 const logIn = () => {
     const { isModalVisible, errorDetails, showError, hideError } = useApiError()
 
+    const {theme} = useTheme()
+
+
     // Input parameters
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    
 
     const [isPswdInvalid, setIsPswdInvalid] = React.useState(false)
     const [isEmailInvalid, setIsEmailInvalid] = React.useState(false)
@@ -46,6 +51,9 @@ const logIn = () => {
 
                 // Handle successful login
                 const token = response.data.data.token;
+                const shop_id = response.data.data.user.shop_id;
+                console.log('shopId : ', shop_id)
+                await AsyncStorage.setItem('shop_id', shop_id.toString())
                 await AsyncStorage.setItem('userToken', token);
                 router.replace('/screens/(Home)');
             } catch (error) {
@@ -83,6 +91,7 @@ const logIn = () => {
                         placeholder="Email"
                         value={email}
                         onChangeText={(text) => setEmail(text)}
+                        style={{color: theme.neutralText}}
                     />
                 </Input>
                 <FormControlHelper>
@@ -116,6 +125,7 @@ const logIn = () => {
                         placeholder="Password"
                         value={password}
                         onChangeText={(text) => setPassword(text)}
+                        style={{color: theme.neutralText}}
                     />
                 </Input>
                 <FormControlHelper>

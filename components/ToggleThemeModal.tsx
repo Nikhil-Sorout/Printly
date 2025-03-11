@@ -26,16 +26,16 @@ const ToggleThemeModal = ({ isVisible, onClose }: { isVisible: boolean, onClose:
             size="md"
         >
             <ModalBackdrop />
-            <ModalContent style={styles.modalContent}>
+            <ModalContent style={[styles.modalContent, {backgroundColor: theme.background}]}>
                 <ModalHeader>
-                    <Heading size="md" className="text-typography-950">
+                    <Heading size="md" className="text-typography-950" style={{color: theme.text}}>
                         Change Theme
                     </Heading>
                     <ModalCloseButton>
                         <Icon
                             as={CloseIcon}
                             size="md"
-                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+                            color={theme.text}
                         />
                     </ModalCloseButton>
                 </ModalHeader>
@@ -43,8 +43,8 @@ const ToggleThemeModal = ({ isVisible, onClose }: { isVisible: boolean, onClose:
                     <Switch
                         size="lg"
                         isDisabled={false}
-                        trackColor={{ false: 'grey', true: "white" }}
-                        thumbColor={"#9893DA"}
+                        trackColor={{ true: theme.border, false: theme.border }}
+                        thumbColor={theme.primary}
                         onToggle={toggleTheme}
                         value={isDark}
                     />

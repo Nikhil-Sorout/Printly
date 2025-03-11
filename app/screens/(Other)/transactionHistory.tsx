@@ -9,16 +9,22 @@ import { useTheme } from '@/app/context/themeContext';
 import { Feather } from '@expo/vector-icons';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { UIActivityIndicator } from 'react-native-indicators';
+import { useCurrency } from '@/app/context/currencyContext';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+
+
 
 const TransactionHistory = () => {
     const [transactions, setTransactions] = useState([]);
     const { isModalVisible, errorDetails, hideError, showError } = useApiError();
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     interface Transaction {
         id: string;
         created_at: string;
         // Add other properties if needed
     }
+    const { currencySymbol, convertAmount } = useCurrency()
 
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     interface TransactionDetail {
@@ -37,9 +43,53 @@ const TransactionHistory = () => {
         fetchTransactions();
     }, [startDate, endDate]);
 
+
+
+    const downloadCSV = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const shopId = await AsyncStorage.getItem('shop_id');
+
+            const response = await axios.get(`${baseUrl}/transactions/export`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    start_date: startDate ? startDate.toISOString() : null,
+                    end_date: endDate ? endDate.toISOString() : null,
+                    shopId: shopId
+                },
+                responseType: 'arraybuffer' // Use arraybuffer instead of blob
+            });
+
+            // Convert arraybuffer to string (CSV format)
+            const csvData = new TextDecoder('utf-8').decode(new Uint8Array(response.data));
+
+            // Define file path
+            const fileUri = FileSystem.documentDirectory + 'transactions.csv';
+
+            // Write data to file
+            await FileSystem.writeAsStringAsync(fileUri, csvData, {
+                encoding: FileSystem.EncodingType.UTF8
+            });
+
+            // Share the file
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri);
+            } else {
+                console.log("Sharing is not available on this device");
+            }
+        } catch (err) {
+            console.error(err);
+            showError(undefined, "Network Error Occurred");
+        }
+    };
+
     const fetchTransactions = async () => {
         try {
             const token = await AsyncStorage.getItem('userToken');
+            const shopId = await AsyncStorage.getItem('shop_id')
             const response = await axios.get(`${baseUrl}/transactions`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -47,7 +97,8 @@ const TransactionHistory = () => {
                 },
                 params: {
                     start_date: startDate ? startDate.toISOString() : null,
-                    end_date: endDate ? endDate.toISOString() : null
+                    end_date: endDate ? endDate.toISOString() : null,
+                    shopId: shopId
                 }
             });
             console.log(response)
@@ -66,10 +117,14 @@ const TransactionHistory = () => {
     const fetchTransactionDetails = async (t_id: string) => {
         try {
             const token = await AsyncStorage.getItem('userToken');
+            const shopId = await AsyncStorage.getItem('shop_id')
             const response = await axios.get(`${baseUrl}/transactions/${t_id}/receipt`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    shopId: shopId
                 }
             });
             if (response.status !== 200) {
@@ -87,8 +142,8 @@ const TransactionHistory = () => {
     const renderTransaction = ({ item }: { item: { id: string; total_amount: number; created_at: string } }) => (
         <View style={[styles.transactionItem, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text style={[styles.transactionText, { color: theme.text, fontWeight: 'bold' }]}>Transaction ID: {item.id}</Text>
-            <Text style={styles.transactionText}>Total Amount: {item.total_amount}</Text>
-            <Text style={styles.transactionText}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
+            <Text style={[styles.transactionText, { color: theme.neutralText }]}>Total Amount: {currencySymbol + " " + Number(convertAmount(item.total_amount)).toFixed(2)}</Text>
+            <Text style={[styles.transactionText, { color: theme.neutralText }]}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
             <Pressable style={{ position: 'absolute', right: 16, top: 16 }} onPress={() => fetchTransactionDetails(item.id)}>
                 <Feather name="info" size={22} color={theme.primary} />
             </Pressable>
@@ -110,7 +165,7 @@ const TransactionHistory = () => {
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <UIActivityIndicator color={theme.primary} size={30}/>
+                <UIActivityIndicator color={theme.primary} size={30} />
             </SafeAreaView>
         )
     }
@@ -119,20 +174,22 @@ const TransactionHistory = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Text style={[styles.header, { color: theme.primary }]}>Transaction History</Text>
             <View style={styles.datePickerContainer}>
-                <Pressable onPress={() => setStartDatePickerVisibility(true)} style={styles.datePickerButton}>
-                    <Text style={{ color: theme.text }}>Start Date: {startDate ? startDate.toLocaleDateString() : 'Select Date'}</Text>
+                <Pressable onPress={() => setStartDatePickerVisibility(true)} style={[styles.datePickerButton, { backgroundColor: theme.buttonBackground }]}>
+                    <Text style={{ color: theme.buttonText }}>Start Date: {startDate ? startDate.toLocaleDateString() : 'Select Date'}</Text>
                 </Pressable>
-                <Pressable onPress={() => setEndDatePickerVisibility(true)} style={styles.datePickerButton}>
-                    <Text style={{ color: theme.text }}>End Date: {endDate ? endDate.toLocaleDateString() : 'Select Date'}</Text>
+                <Pressable onPress={() => setEndDatePickerVisibility(true)} style={[styles.datePickerButton, { backgroundColor: theme.buttonBackground }]}>
+                    <Text style={{ color: theme.buttonText }}>End Date: {endDate ? endDate.toLocaleDateString() : 'Select Date'}</Text>
                 </Pressable>
             </View>
             <DateTimePickerModal
+                isDarkModeEnabled={isDark}
                 isVisible={isStartDatePickerVisible}
                 mode="date"
                 onConfirm={handleConfirmStartDate}
                 onCancel={() => setStartDatePickerVisibility(false)}
             />
             <DateTimePickerModal
+                isDarkModeEnabled={isDark}
                 isVisible={isEndDatePickerVisible}
                 mode="date"
                 onConfirm={handleConfirmEndDate}
@@ -143,27 +200,30 @@ const TransactionHistory = () => {
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderTransaction}
             />
+            <Pressable style={{ backgroundColor: theme.buttonBackground, padding: 8, justifyContent: 'center', alignContent: 'center', borderRadius: 8 }} onPress={downloadCSV}>
+                <Text style={{ color: theme.buttonText, textAlign: 'center' }}>Download CSV</Text>
+            </Pressable>
             <Modal
                 visible={!!selectedTransaction}
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setSelectedTransaction(null)}
             >
-                <SafeAreaView style={styles.modalContainer}>
+                <SafeAreaView style={[styles.modalContainer]}>
                     <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
                         <Text style={[styles.modalHeader, { color: theme.text }]}>Transaction ID: {selectedTransaction?.id}</Text>
                         <Text style={[styles.modalHeader, { color: theme.text }]}>Date: {new Date(selectedTransaction?.created_at ?? '').toLocaleDateString()}</Text>
                         <ScrollView>
                             {transactionDetails.map((item, index) => (
                                 <View key={index} style={styles.itemDetail}>
-                                    <Text style={[styles.itemText, { color: theme.text }]}>Name: {item.name}</Text>
-                                    <Text style={[styles.itemText, { color: theme.text }]}>Quantity: {item.quantity}</Text>
-                                    <Text style={[styles.itemText, { color: theme.text }]}>Total Price: {item.subtotal}</Text>
+                                    <Text style={[styles.itemText, { color: theme.neutralText }]}>Name: {item.name}</Text>
+                                    <Text style={[styles.itemText, { color: theme.neutralText }]}>Quantity: {item.quantity}</Text>
+                                    <Text style={[styles.itemText, { color: theme.neutralText }]}>Total Price: {currencySymbol + ' ' + convertAmount(item.subtotal).toFixed(2)}</Text>
                                 </View>
                             ))}
                         </ScrollView>
-                        <Pressable onPress={() => setSelectedTransaction(null)} style={{ backgroundColor: theme.primary, padding: 10, borderRadius: 5, alignItems: 'center' }}>
-                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Close</Text>
+                        <Pressable onPress={() => setSelectedTransaction(null)} style={{ backgroundColor: theme.buttonBackground, padding: 10, borderRadius: 5, alignItems: 'center' }}>
+                            <Text style={{ color: theme.buttonText, fontWeight: 'bold' }}>Close</Text>
                         </Pressable>
                     </View>
                 </SafeAreaView>
@@ -222,7 +282,6 @@ const styles = StyleSheet.create({
     datePickerButton: {
         padding: 10,
         borderRadius: 5,
-        backgroundColor: '#E5E7EB',
     },
 });
 

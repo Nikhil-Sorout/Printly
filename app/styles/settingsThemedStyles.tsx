@@ -24,7 +24,7 @@ const settingsThemedStyles = () => {
         },
         settingItem: {
             width: width * .9,
-            padding: width * .03
+            padding: width * .03,
         },
         itemName: {
             fontSize: 18,
