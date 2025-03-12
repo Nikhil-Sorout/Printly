@@ -2,7 +2,7 @@
 
 ### A Smart Receipt & Sales Tracking App  
 
-Printly is a digital solution designed to help shopkeepers efficiently manage their sales, track transactions, and generate receipts in a seamless way.  
+Printly is a versatile digital solution designed for various businesses, including shopkeepers, café owners, restaurants, and other retail outlets. It helps them efficiently manage sales, track transactions, and generate receipts seamlessly.  
 
 ## 🚀 Features  
 
